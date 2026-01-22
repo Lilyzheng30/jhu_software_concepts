@@ -1,0 +1,25 @@
+<nav class="nav-bar">
+  <ul class="nav-links">
+    <li>
+      <a class="nav-link {% if request.endpoint == 'pages.home' %}active{% endif %}"
+          href="{{ url_for('pages.home') }}">
+        Homepage
+      </a>
+    </li>
+
+    <li>
+      <a class="nav-link {% if request.endpoint == 'pages.projects' %}active{% endif %}"
+          href="{{ url_for('pages.projects') }}">
+        Projects
+      </a>
+    </li>
+
+    <li>
+      <a class="nav-link {% if request.endpoint == 'pages.contact' %}active{% endif %}"
+          href="{{ url_for('pages.contact') }}">
+        Contact
+      </a>
+    </li>
+  </ul>
+</nav>
+  

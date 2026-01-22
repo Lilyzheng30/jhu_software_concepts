@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Message Board - {% block title %}{% endblock title %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+  {% include("_navigation.html") %}
+  <h3>{%block pageheader%} {%endblock pageheader%}</h3>
+  <h1>Lily Zheng</h1>
+  <section>
+    <main>
+      {% block content %}<p>No messages.</p>{% endblock content %}
+    </main>
+  </section>
+</body>
+</html>

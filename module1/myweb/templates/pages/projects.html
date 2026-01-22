@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h4>{% block pageheader %}Projects{% endblock pageheader %}</h4>
+{% endblock header %}
+
+{% block content %}
+  <p>
+    Learn more about this project by visiting the <a href="{{ url_for('pages.contact') }}">contact page</a>.
+  </p>
+{% endblock content %}

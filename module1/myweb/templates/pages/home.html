@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h4>{% block pageheader %}Homepage{% endblock pageheader %}</h4>
+{% endblock header %}
+
+{% block content %}
+<div class="bio-container addmarg">
+  <div class="bio-text">
+    <p><strong>Position:</strong> Student at Johns Hopkins University</p>
+    <p><strong>Bio:</strong> I am currently a graduate student at Johns Hopkins University, pursuing a Master of Science in Artificial Intelligence. 
+      I earned an Honors Bachelor of Arts in Chemical and Physical Biology. With an interdisciplinary background across science and computation, 
+      I am interested in applying AI to real-world problems, particularly in healthcare and data-driven systems.
+    </p>
+  </div>
+
+  <img src="{{ url_for('static', filename='profilepic.jpg') }}"
+       alt="Profile picture"
+       class="profilepic-icon ">
+</div>
+{% endblock content %}
