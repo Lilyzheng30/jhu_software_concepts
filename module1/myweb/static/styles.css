@@ -105,3 +105,15 @@
 .addmarg {
   margin-top: 7rem;   
 }
+
+.github-icon {
+  width: 70px;        
+  height: auto;
+  cursor: pointer;
+  display: block;
+  margin: 2rem auto;
+}
+
+.github-icon:hover {
+  opacity: 0.8;       
+}
