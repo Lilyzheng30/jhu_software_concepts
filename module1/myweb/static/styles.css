@@ -27,6 +27,7 @@
   }
 
 
+/* Styles the navigation bar and fixes it to the top-right corner of the screen. */
 .nav-bar {
   position: fixed;              
   top: 0;
@@ -45,10 +46,12 @@
   font-weight: 500;
 }
 
+
 .nav-link.active {
   color: #023b55;
   border-bottom: 2px solid #023b55;
 }
+
 
 .nav-links {
   list-style: none;        
@@ -58,6 +61,7 @@
   padding: 0;
 }
 
+
 .linkedin-icon {
   width: 150px;        
   height: auto;
@@ -66,9 +70,11 @@
   margin: 2rem auto;
 }
 
+
 .linkedin-icon:hover {
   opacity: 0.8;       
 }
+
 
 .linkedin-text {
   margin-top: 0.5rem;
@@ -76,6 +82,8 @@
   color: #555;
 }
 
+
+/* Aligns text to the left for body content sections. */
 .bodyleft {
   font-family: sans-serif;
   font-size: 20px;
@@ -102,9 +110,11 @@
   margin-left: 2rem;          
 }
 
+
 .addmarg {
   margin-top: 7rem;   
 }
+
 
 .github-icon {
   width: 70px;        
@@ -113,6 +123,7 @@
   display: block;
   margin: 2rem auto;
 }
+
 
 .github-icon:hover {
   opacity: 0.8;       
