@@ -1,6 +1,6 @@
 # jhu_software_concepts module 1 Personal Website Assignment
 
-Once all module files are downloaded, type (python3 run.py) into the terminal. This will start the application and generate a link that can be used to access the website. If no link appears, you can manually navigate to (http://0.0.0.0:8080).
+Once all module files are downloaded, type (python run.py) into the terminal. This will start the application and generate a link that can be used to access the website. If no link appears, you can manually navigate to (http://0.0.0.0:8080).
 
 Upon entering the website, you will see the homepage, which includes my name, position, a brief bio, and a profile picture. In the upper-right corner of the page, there is a navigation bar that allows you to access the different pages of the website: Homepage (the default landing page), Projects, and Contact Info.
 
