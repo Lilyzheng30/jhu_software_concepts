@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+<!-- Contacts Page -->
+{% block header %}
+  <h4>{% block pageheader %}Contact Info{% endblock pageheader %}</h4>
+{% endblock header %}
+
+{% block content %}
+
+  <p class = "addmarg">
+    My email address: Lzheng45@jh.edu
+  </p>
+  <a href="https://www.linkedin.com/in/lilyzheng33"
+   target="_blank" rel="noopener noreferrer">
+  <img src="{{ url_for('static', filename='linkedin_pic.png') }}"
+       alt="LinkedIn Profile"
+       class="linkedin-icon">
+  </a>
+  <p class="linkedin-text">Click icon to connect with me on LinkedIn</p>
+{% endblock content %}
