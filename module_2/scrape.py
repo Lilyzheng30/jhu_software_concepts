@@ -58,15 +58,12 @@ def parse_row(table_row):
         url = "https://www.thegradcafe.com" + link["href"]
 
     return {
-        "program_raw": program_raw,
+        "program_raw": None,
         "university_raw": university_raw,
         "comments_raw": None,
         "date_added_raw": date_raw,
         "url": url,
         "applicant_status_raw": decision_raw,
-
-        "acceptance_date_raw": None,
-        "rejection_date_raw": None,
         "semester_year_start_raw": None,
         "international_american_raw": None,
         "gre_score_raw": None,
@@ -75,7 +72,6 @@ def parse_row(table_row):
         "gpa_raw": None,
         "gre_aw_raw": None,
     }
-
 
 def parse_detail_page(url):
     req = request.Request(url)
@@ -90,26 +86,50 @@ def parse_detail_page(url):
     main = soup.find("main")
     if not main:
         return detail_data
+    
+    dl = main.find("dl")
+    if not dl:
+        return detail_data
 
-    dls = main.find_all("dl")
-    for dl in dls:
-        dt = dl.find("dt")
-        dd = dl.find("dd")
-
+    for block in dl.find_all("div"):
+        dt = block.find("dt")
+        dd = block.find("dd")
         if not dt or not dd:
             continue
+
+        # li = block.find("li")
+        # if not li:
+        #     continue
+        # figure out the last box whic has a list of information 
 
         label = dt.get_text(" ", strip=True).lower()
         value = dd.get_text(" ", strip=True)
 
-        if "gpa" in label:
+        if "undergrad gpa" in label:
             detail_data["gpa_raw"] = value
-        elif "gre" in label:
+        elif "program" in label:
+            detail_data["program_raw"] = value
+        elif "gre general" in label:
             detail_data["gre_score_raw"] = value
-        elif "degree" in label:
-            detail_data["degree_type"] = value
+        elif "degree type" in label:
+            detail_data["degree_type_raw"] = value
+        elif "note" in label:
+            detail_data["comments_raw"] = value
+        elif "gre verbal" in label:
+            detail_data["gre_v_score_raw"] = value
+        elif "analytical writing" in label:
+            detail_data["gre_aw_raw"] = value
+        elif "degree's country of origin" in label:
+            if value == "American":
+                detail_data["international_american_raw"] = value
+            else:
+                detail_data["international_american_raw"] = 'International'
+
 
     return detail_data
+
+
+#add fall 2026 and also like figure out status and acceptance date thing 
 
 
 def save_data(data, filename="applicant_data.json"):
