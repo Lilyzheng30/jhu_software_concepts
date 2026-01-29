@@ -7,7 +7,7 @@ def scrape_data():
     all_entries = []
     base_url = "https://www.thegradcafe.com/survey/"
 
-    for page_num in range(1, 4):
+    for page_num in range(1, 3):
         full_url = base_url + "?page=" + str(page_num)
 
         req = request.Request(full_url)
@@ -26,32 +26,60 @@ def scrape_data():
         if not rows:
             break
         
-        for table_row in rows:
-            entry = parse_row(table_row)
+        meta_row = None
+        i = 0
+        while i < len(rows):
+            main_row = rows[i]
+
+            meta_row = None
+            i_step = 1
+
+            if i + 1 < len(rows):
+                next_text = rows[i + 1].get_text(" ", strip=True).lower()
+                if ("fall" in next_text or "spring" in next_text or "summer" in next_text or "winter" in next_text or "international" in next_text or "american" in next_text):
+
+                    meta_row = rows[i + 1]
+                    i_step = 2
+
+            entry = parse_row(main_row, meta_row)
             if entry:
                 if entry["url"]:
                     extra = parse_detail_page(entry["url"])
                     entry.update(extra)
                 all_entries.append(entry)
 
+            i += i_step
+
     return all_entries
 
 
 
-def parse_row(table_row):
-    tds = table_row.find_all("td")
+def parse_row(main_row, meta_row):
+    tds = main_row.find_all("td")
     if len(tds) < 4:
         return None
 
     university_raw = tds[0].get_text(" ", strip=True)
-    program_raw = tds[1].get_text(" ", strip=True)
     date_raw = tds[2].get_text(" ", strip=True)
     decision_raw = tds[3].get_text(" ", strip=True)
 
-    a = tds[4].find("a")
+    semester = None
+    if meta_row:
+        meta_text = meta_row.get_text(" ", strip=True)
+        tokens = meta_text.split()
+
+        for j in range(len(tokens) - 1):
+            season = tokens[j].lower()
+            year = tokens[j + 1]
+
+            if season in ["fall", "spring", "summer", "winter"] and year.isdigit() and len(year) == 4:
+                semester = tokens[j] + " " + year
+                break
+
+    link = None
+    a = main_row.find("a")
     if a and a.get("href"):
         link = a
-
 
     url = None
     if link and link.has_attr("href"):
@@ -64,7 +92,7 @@ def parse_row(table_row):
         "date_added_raw": date_raw,
         "url": url,
         "applicant_status_raw": decision_raw,
-        "semester_year_start_raw": None,
+        "semester_year_start_raw": semester,
         "international_american_raw": None,
         "gre_score_raw": None,
         "gre_v_score_raw": None,
@@ -72,6 +100,7 @@ def parse_row(table_row):
         "gpa_raw": None,
         "gre_aw_raw": None,
     }
+
 
 def parse_detail_page(url):
     req = request.Request(url)
@@ -86,23 +115,18 @@ def parse_detail_page(url):
     main = soup.find("main")
     if not main:
         return detail_data
-    
+
     dl = main.find("dl")
     if not dl:
         return detail_data
 
+    # 1) dt/dd blocks
     for block in dl.find_all("div"):
         dt = block.find("dt")
         dd = block.find("dd")
         if not dt or not dd:
             continue
 
-        # li = block.find("li")
-        # if not li:
-        #     continue
-        # figure out the last box whic has a list of information 
-        #fds
-    code
         label = dt.get_text(" ", strip=True).lower()
         value = dd.get_text(" ", strip=True)
 
@@ -110,24 +134,33 @@ def parse_detail_page(url):
             detail_data["gpa_raw"] = value
         elif "program" in label:
             detail_data["program_raw"] = value
-        elif "gre general" in label:
-            detail_data["gre_score_raw"] = value
         elif "degree type" in label:
             detail_data["degree_type_raw"] = value
         elif "note" in label:
             detail_data["comments_raw"] = value
-        elif "gre verbal" in label:
-            detail_data["gre_v_score_raw"] = value
-        elif "analytical writing" in label:
-            detail_data["gre_aw_raw"] = value
         elif "degree's country of origin" in label:
-            if value == "American":
-                detail_data["international_american_raw"] = value
-            else:
-                detail_data["international_american_raw"] = 'International'
+            detail_data["international_american_raw"] = "American" if value == "American" else "International"
 
+    # 2) GRE ul/li spans
+    ul = dl.find("ul")
+    if ul:
+        for li in ul.find_all("li"):
+            spans = li.find_all("span")
+            if len(spans) < 2:
+                continue
+
+            label = spans[0].get_text(" ", strip=True).lower()
+            value = spans[1].get_text(" ", strip=True)
+
+            if "gre general" in label and not detail_data.get("gre_score_raw"):
+                detail_data["gre_score_raw"] = value
+            elif "gre verbal" in label and not detail_data.get("gre_v_score_raw"):
+                detail_data["gre_v_score_raw"] = value
+            elif "analytical writing" in label and not detail_data.get("gre_aw_raw"):
+                detail_data["gre_aw_raw"] = value
 
     return detail_data
+
 
 
 #add fall 2026 and also like figure out status and acceptance date thing 
