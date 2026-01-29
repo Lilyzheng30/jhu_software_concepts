@@ -101,7 +101,8 @@ def parse_detail_page(url):
         # if not li:
         #     continue
         # figure out the last box whic has a list of information 
-
+        #fds
+    code
         label = dt.get_text(" ", strip=True).lower()
         value = dd.get_text(" ", strip=True)
 
