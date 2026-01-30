@@ -5,6 +5,7 @@ def load_data(filename="applicant_data.json"):
     with open(filename, "r", encoding="utf-8") as f:
         return json.load(f)
     
+# Map scraped field names to cleaner output names.
 RENAME = {
     "program_raw": "program",
     "university_raw": "university",
@@ -26,7 +27,7 @@ def clean_data(entries):
     for e in entries:
         row = {}
 
-        # 1) rename keys + normalize strings
+        # rename keys + normalize strings
         for old_key, new_key in RENAME.items():
             value = e.get(old_key)
 
@@ -36,16 +37,16 @@ def clean_data(entries):
 
             row[new_key] = value
 
-        # 2) normalize GRE zeros → None
+        # normalize GRE zeros to None
         for k in ["gre_total", "gre_verbal", "gre_writing"]:
             if row.get(k) in ["0", "0.0", "0.00"]:
                 row[k] = None
 
-        # 3) normalize GPA zeros → None
+        # normalize GPA zeros to None
         if row.get("gpa") in ["0", "0.0", "0.00"]:
             row["gpa"] = None
 
-        # 4) parse applicant status into dates (keep original status too)
+        # parse applicant status into dates (keep original status too)
         status = e.get("applicant_status_raw")
         row["applicant_status"] = status
 
@@ -66,10 +67,11 @@ def clean_data(entries):
 
 # saves cleaned data into a JSON file
 def save_data(data, filename="llm_extend_applicant_data.json"):
+    # Write cleaned results for LLM processing.
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-# ---- run the cleaning pipeline (same style as your scrape.py) ----
+
 entries = load_data("applicant_data.json")
 cleaned_entries = clean_data(entries)
 save_data(cleaned_entries, "llm_extend_applicant_data.json")

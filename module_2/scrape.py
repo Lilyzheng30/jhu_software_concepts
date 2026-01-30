@@ -10,6 +10,7 @@ def scrape_data():
     for page_num in range(3, 1605):
         full_url = base_url + "?page=" + str(page_num)
 
+        # Set a user-agent to reduce blocking.
         req = request.Request(full_url)
         req.add_header("User-Agent", "Mozilla/5.0")
 
@@ -20,6 +21,7 @@ def scrape_data():
             print("Page fetch failed:", page_num, e)
             continue
 
+        # Parse the listing page HTML.
         soup = BeautifulSoup(html, "html.parser")
 
         table = soup.find("table")
@@ -41,7 +43,7 @@ def scrape_data():
             if i + 1 < len(rows):
                 next_text = rows[i + 1].get_text(" ", strip=True).lower()
                 if ("fall" in next_text or "spring" in next_text or "summer" in next_text or "winter" in next_text or "international" in next_text or "american" in next_text):
-
+                    # Meta row contains term/citizenship info for the row above.
                     meta_row = rows[i + 1]
                     i_step = 2
 
@@ -67,6 +69,7 @@ def parse_row(main_row, meta_row):
     date_raw = tds[2].get_text(" ", strip=True)
     decision_raw = tds[3].get_text(" ", strip=True)
 
+    # Extract semester/year from the meta row if present.
     semester = None
     if meta_row:
         meta_text = meta_row.get_text(" ", strip=True)
@@ -80,6 +83,7 @@ def parse_row(main_row, meta_row):
                 semester = tokens[j] + " " + year
                 break
 
+    # Detail-page URL 
     link = None
     a = main_row.find("a")
     if a and a.get("href"):
@@ -107,6 +111,7 @@ def parse_row(main_row, meta_row):
 
 
 def parse_detail_page(url):
+    # Fetch detail page for extra fields (program, GPA, GRE).
     req = request.Request(url)
     req.add_header("User-Agent", "Mozilla/5.0")
 
@@ -137,6 +142,7 @@ def parse_detail_page(url):
         label = dt.get_text(" ", strip=True).lower()
         value = dd.get_text(" ", strip=True)
 
+        # Map known labels to raw fields.
         if "undergrad gpa" in label:
             detail_data["gpa_raw"] = value
         elif "program" in label:
