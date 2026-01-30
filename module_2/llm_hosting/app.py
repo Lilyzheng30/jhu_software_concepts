@@ -251,6 +251,29 @@ def _call_llm(program_text: str) -> Dict[str, str]:
     }
 
 
+def _build_program_text(row: Dict[str, Any]) -> str:
+    """Combine program + university if both are present."""
+    program = (row or {}).get("program") or ""
+    university = (row or {}).get("university") or ""
+    program = str(program).strip()
+    university = str(university).strip()
+    if program and university:
+        return f"{program}, {university}"
+    return program or university
+
+
+def _fallback_university(row: Dict[str, Any], model_university: str) -> str:
+    """Use the input university if the model returned a placeholder."""
+    u = (model_university or "").strip()
+    if not u:
+        return u
+    placeholders = {"unknown", "none", "n/a", "na", "university of x", "university of x."}
+    if u.lower() in placeholders:
+        raw_input_uni = (row or {}).get("university") or ""
+        return _post_normalize_university(str(raw_input_uni).strip())
+    return u
+
+
 def _normalize_input(payload: Any) -> List[Dict[str, Any]]:
     """Accept either a list of rows or {'rows': [...]}."""
     if isinstance(payload, list):
@@ -274,10 +297,12 @@ def standardize() -> Any:
 
     out: List[Dict[str, Any]] = []
     for row in rows:
-        program_text = (row or {}).get("program") or ""
+        program_text = _build_program_text(row or {})
         result = _call_llm(program_text)
         row["llm-generated-program"] = result["standardized_program"]
-        row["llm-generated-university"] = result["standardized_university"]
+        row["llm-generated-university"] = _fallback_university(
+            row or {}, result["standardized_university"]
+        )
         out.append(row)
 
     return jsonify({"rows": out})
@@ -303,10 +328,12 @@ def _cli_process_file(
 
     try:
         for row in rows:
-            program_text = (row or {}).get("program") or ""
+            program_text = _build_program_text(row or {})
             result = _call_llm(program_text)
             row["llm-generated-program"] = result["standardized_program"]
-            row["llm-generated-university"] = result["standardized_university"]
+            row["llm-generated-university"] = _fallback_university(
+                row or {}, result["standardized_university"]
+            )
 
             json.dump(row, sink, ensure_ascii=False)
             sink.write("\n")
