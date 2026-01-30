@@ -7,14 +7,18 @@ def scrape_data():
     all_entries = []
     base_url = "https://www.thegradcafe.com/survey/"
 
-    for page_num in range(1, 3):
+    for page_num in range(3, 1605):
         full_url = base_url + "?page=" + str(page_num)
 
         req = request.Request(full_url)
         req.add_header("User-Agent", "Mozilla/5.0")
 
-        page = request.urlopen(req)
-        html = page.read().decode("utf-8")
+        try:
+            page = request.urlopen(req)
+            html = page.read().decode("utf-8")
+        except Exception as e:
+            print("Page fetch failed:", page_num, e)
+            continue
 
         soup = BeautifulSoup(html, "html.parser")
 
@@ -106,8 +110,12 @@ def parse_detail_page(url):
     req = request.Request(url)
     req.add_header("User-Agent", "Mozilla/5.0")
 
-    page = request.urlopen(req)
-    html = page.read().decode("utf-8")
+    try:
+        page = request.urlopen(req)
+        html = page.read().decode("utf-8")
+    except Exception as e:
+        return {}
+    
     soup = BeautifulSoup(html, "html.parser")
 
     detail_data = {}
@@ -120,7 +128,6 @@ def parse_detail_page(url):
     if not dl:
         return detail_data
 
-    # 1) dt/dd blocks
     for block in dl.find_all("div"):
         dt = block.find("dt")
         dd = block.find("dd")
@@ -141,7 +148,6 @@ def parse_detail_page(url):
         elif "degree's country of origin" in label:
             detail_data["international_american_raw"] = "American" if value == "American" else "International"
 
-    # 2) GRE ul/li spans
     ul = dl.find("ul")
     if ul:
         for li in ul.find_all("li"):
@@ -160,10 +166,6 @@ def parse_detail_page(url):
                 detail_data["gre_aw_raw"] = value
 
     return detail_data
-
-
-
-#add fall 2026 and also like figure out status and acceptance date thing 
 
 
 def save_data(data, filename="applicant_data.json"):
