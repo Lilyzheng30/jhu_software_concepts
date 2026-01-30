@@ -1,2 +1,2 @@
-module_2/llm_hosting/models/
 llm_hosting/models/
+*.gguf
