@@ -18,6 +18,7 @@ RENAME = {
     "gre_aw_raw": "gre_writing",
     "degree_type_raw": "degree_type",
     "gpa_raw": "gpa",
+    "url": "url",
 }
 
 # converts data into a structured format
