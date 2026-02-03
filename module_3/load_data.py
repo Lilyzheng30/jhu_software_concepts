@@ -41,7 +41,14 @@ def execute_query(connection, query):
 def parse_date(s):
     if not s:
         return None
-    return datetime.strptime(s, "%B %d, %Y").date()
+    if isinstance(s, str):
+        s = s.strip()
+    for fmt in ("%B %d, %Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except (TypeError, ValueError):
+            continue
+    return None
 
 def parse_float(s):
     if s is None or s =="":

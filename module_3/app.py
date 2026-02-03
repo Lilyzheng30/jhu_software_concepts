@@ -84,7 +84,10 @@ def run_llm_and_write_out_json():
 
 @app.route("/")
 def home():
+    seeded_now = ensure_initial_dataset_loaded()
     status_message = request.args.get("status")
+    if seeded_now and not status_message:
+        status_message = "Database was empty, so initial data was loaded from module_2_out.json."
     conn = get_db_connection()
     cur = conn.cursor()
 
