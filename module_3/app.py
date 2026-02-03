@@ -37,6 +37,26 @@ def fetch_existing_urls():
     return urls
 
 
+def ensure_initial_dataset_loaded():
+    # Only seed from module_2_out.json when the applicants table is empty/missing.
+    seeded = False
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM applicants;")
+        current_count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+    except Exception:
+        current_count = 0
+
+    if current_count == 0:
+        run_load(input_file="module_2_out.json")
+        seeded = True
+
+    return seeded
+
+
 def run_llm_and_write_out_json():
     # Import lazily so app startup still works if LLM deps are missing.
     from module_2.llm_hosting.app import _cli_process_file
@@ -61,7 +81,6 @@ def run_llm_and_write_out_json():
 
     with open(out_json_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
-
 
 @app.route("/")
 def home():
@@ -119,6 +138,7 @@ def pull_data():
 
     is_pulling = True
     try:
+        seeded_now = ensure_initial_dataset_loaded()
         existing_urls = fetch_existing_urls()
         run_scrape(existing_urls=existing_urls, filename="module_2/applicant_data.json")
         run_clean(
@@ -133,6 +153,13 @@ def pull_data():
     finally:
         is_pulling = False
 
+    if seeded_now:
+        return redirect(
+            url_for(
+                "home",
+                status="Initial dataset loaded from module_2_out.json, then Pull Data added newest rows.",
+            )
+        )
     return redirect(url_for("home", status="Pull Data completed. Analysis now includes newest rows."))
 
 
