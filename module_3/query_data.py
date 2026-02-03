@@ -6,7 +6,7 @@ QUERIES = {
     "q1": """
         SELECT COUNT(*)
         FROM applicants
-        WHERE term = 'Fall 2025';
+        WHERE term = 'Fall 2026';
     """,
     "q2": """
         SELECT ROUND(
@@ -26,7 +26,7 @@ QUERIES = {
     "q4": """
         SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE us_or_international = 'American' AND term = 'Fall 2025';
+        WHERE us_or_international = 'American' AND term = 'Fall 2026';
     """,
     "q5": """
         SELECT ROUND(
@@ -34,12 +34,12 @@ QUERIES = {
             2
         )
         FROM applicants
-        WHERE term = 'Fall 2025';
+        WHERE term = 'Fall 2026';
     """,
     "q6": """
         SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE term = 'Fall 2025' AND status ILIKE 'Accepted on%';
+        WHERE term = 'Fall 2026' AND status ILIKE 'Accepted on%';
     """,
     "q7": """
         SELECT COUNT(*)
@@ -49,19 +49,29 @@ QUERIES = {
     "q8": """
         SELECT COUNT(*)
         FROM applicants
-        WHERE term ILIKE '%2025%'
-          AND university IN ('Georgetown University', 'MIT', 'Stanford University', 'Carnegie Mellon University')
-          AND degree = 'PhD'
-          AND program = 'Computer Science'
-          AND status ILIKE 'Accepted on%';
+        WHERE term ILIKE '%2026%'
+        AND (
+            university ILIKE 'Georgetown University'
+            OR university ILIKE '%Massachusetts Institute of Technology%'
+            OR university ILIKE 'Stanford University'
+            OR university ILIKE 'Carnegie Mellon University'
+            )          
+        AND degree = 'PhD'
+        AND program ILIKE '%Computer Science%'
+        AND status ILIKE 'Accepted on%';
     """,
     "q9": """
         SELECT COUNT(*)
         FROM applicants
-        WHERE term ILIKE '%2025%'
-          AND llm_generated_university IN ('Georgetown University', 'MIT', 'Stanford University', 'Carnegie Mellon University')
+        WHERE term ILIKE '%2026%'
+          AND (
+            llm_generated_university ILIKE 'Georgetown University'
+            OR llm_generated_university ILIKE '%Massachusetts Institute of Technology%'
+            OR llm_generated_university ILIKE 'Stanford University'
+            OR llm_generated_university ILIKE 'Carnegie Mellon University'
+            )
           AND degree = 'PhD'
-          AND llm_generated_program = 'Computer Science'
+          AND llm_generated_program ILIKE '%Computer Science%'
           AND status ILIKE 'Accepted on%';
     """,
     "q10": """
@@ -84,7 +94,7 @@ QUERIES = {
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     try:
         params = {
-            "database": db_name,
+            "dbname": db_name,
             "user": db_user,
             "host": db_host,
             "port": db_port,

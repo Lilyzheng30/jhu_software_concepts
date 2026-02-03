@@ -8,7 +8,7 @@ from datetime import datetime
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     try:
         params = {
-            "database": db_name,
+            "dbname": db_name,
             "user": db_user,
             "host": db_host,
             "port": db_port,
