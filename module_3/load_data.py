@@ -26,7 +26,7 @@ def create_database(connection, query):
     try:
         cursor.execute(query)
         print("Database created successfully")
-    except OperationalError as e:
+    except Exception as e:
         print(f"The error '{e}' occurred")
 
 def execute_query(connection, query):
@@ -48,14 +48,6 @@ def parse_float(s):
         return None
     return float(s)
 
-connection = create_connection("postgres", "postgres", "abc123", "127.0.0.1", "5432")
-
-create_database(connection, "CREATE DATABASE sm_app")
-connection.close()
-
-connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
-
-
 create_applicant_table = """
 CREATE TABLE IF NOT EXISTS applicants (
   p_id SERIAL PRIMARY KEY,
@@ -76,38 +68,71 @@ CREATE TABLE IF NOT EXISTS applicants (
   llm_generated_university TEXT
 );
 """
-execute_query(connection, create_applicant_table)
+
+create_url_unique_index = """
+CREATE UNIQUE INDEX IF NOT EXISTS applicants_url_unique_idx
+ON applicants (url);
+"""
+
+dedupe_existing_urls = """
+DELETE FROM applicants a
+USING applicants b
+WHERE a.url IS NOT NULL
+  AND b.url IS NOT NULL
+  AND a.url = b.url
+  AND a.p_id > b.p_id;
+"""
 
 insert_sql = """
 INSERT INTO applicants (
 program, university, comments, date_added, url, status, term, us_or_international, gpa, gre, gre_v, gre_aw, degree, llm_generated_program, llm_generated_university)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT (url) DO NOTHING;
 """
 
-data_path = Path(__file__).with_name("out.json")
-with open(data_path, "r") as f:
-    data = json.load(f)
+def run_load(input_file="out.json"):
+    connection = create_connection("postgres", "postgres", "abc123", "127.0.0.1", "5432")
+    create_database(connection, "CREATE DATABASE sm_app")
+    connection.close()
 
-cursor = connection.cursor()
-for rec in data:
-    values = (
-        rec.get("program"),
-        rec.get("university"),
-        rec.get("comments"),
-        parse_date(rec.get("date_added")),
-        rec.get("url"),
-        rec.get("applicant_status"),
-        rec.get("semester_year_start"),
-        rec.get("citizenship"),
-        parse_float(rec.get("gpa")),
-        parse_float(rec.get("gre_total")),
-        parse_float(rec.get("gre_verbal")),
-        parse_float(rec.get("gre_writing")),
-        rec.get("degree_type"),
-        rec.get("llm-generated-program"),
-        rec.get("llm-generated-university"),
-    )
-    cursor.execute(insert_sql, values)
+    connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
+    execute_query(connection, create_applicant_table)
+    # Remove old duplicate URLs so the unique index can be created safely.
+    execute_query(connection, dedupe_existing_urls)
+    execute_query(connection, create_url_unique_index)
 
-connection.commit()
-cursor.close()
+    data_path = Path(input_file)
+    if not data_path.is_absolute():
+        data_path = Path(__file__).with_name(input_file)
+
+    with open(data_path, "r") as f:
+        data = json.load(f)
+
+    cursor = connection.cursor()
+    for rec in data:
+        values = (
+            rec.get("program"),
+            rec.get("university"),
+            rec.get("comments"),
+            parse_date(rec.get("date_added")),
+            rec.get("url"),
+            rec.get("applicant_status"),
+            rec.get("semester_year_start"),
+            rec.get("citizenship"),
+            parse_float(rec.get("gpa")),
+            parse_float(rec.get("gre_total")),
+            parse_float(rec.get("gre_verbal")),
+            parse_float(rec.get("gre_writing")),
+            rec.get("degree_type"),
+            rec.get("llm-generated-program"),
+            rec.get("llm-generated-university"),
+        )
+        cursor.execute(insert_sql, values)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+if __name__ == "__main__":
+    run_load()

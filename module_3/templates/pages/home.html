@@ -4,6 +4,22 @@
 {% block pageheader %}Analysis{% endblock pageheader %}
 
 {% block content %}
+<div class="analysis-top-right">
+    <div class="action-btn-row">
+        <div class="action-col action-col-left">
+            <p class="action-note">Pull Data fetches new GradCafe entries and stores in database <br> (May take a few minutes as data needs to be process through a LLM).</p>
+            <form method="POST" action="{{ url_for('pull_data') }}">
+              <button type="submit" class="action-btn">Pull Data</button>
+            </form>
+        </div>
+        <div class="action-col action-col-right">
+            <p class="action-note">Update Analysis refreshes with the newest available results.</p>
+            <form method="POST" action="{{ url_for('update_analysis') }}">
+              <button type="submit" class="action-btn">Update Analysis</button>
+            </form>
+        </div>
+    </div>
+</div>
 
 <table class="analysis-table"> 
     <tbody>
@@ -65,10 +81,16 @@
     </tbody>
 </table>
 
+{% if is_pulling or status_message %}
+<div class="status-popups">
+    {% if is_pulling %}
+    <div class="status-popup status-popup-warn">Pull Data is running... please wait.</div>
+    {% endif %}
+    {% if status_message %}
+    <div class="status-popup status-popup-info">{{ status_message }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+
 {% endblock content %}
-
-
-
-
-
-

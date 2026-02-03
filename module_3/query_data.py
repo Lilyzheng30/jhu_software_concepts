@@ -53,7 +53,7 @@ QUERIES = {
         AND (
             university ILIKE 'Georgetown University'
             OR university ILIKE '%Massachusetts Institute of Technology%'
-            OR university ILIKE 'Stanford University'
+            OR university ILIKE 'Stanford%'
             OR university ILIKE 'Carnegie Mellon University'
             )          
         AND degree = 'PhD'
@@ -67,7 +67,7 @@ QUERIES = {
           AND (
             llm_generated_university ILIKE 'Georgetown University'
             OR llm_generated_university ILIKE '%Massachusetts Institute of Technology%'
-            OR llm_generated_university ILIKE 'Stanford University'
+            OR llm_generated_university ILIKE 'Stanford%'
             OR llm_generated_university ILIKE 'Carnegie Mellon University'
             )
           AND degree = 'PhD'
