@@ -4,108 +4,68 @@
 {% block pageheader %}Analysis{% endblock pageheader %}
 
 {% block content %}
-<div class="bio-container addmarg">
-  <div class="bio-text">
-    <table> 
-        <tbody>
-            <tr>
-                <td> Q1: How many entries do you have in your database who have applied for Fall 2025? </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q1 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q2: What percentage of entries are from international students (not American or Other) (to two decimal places)?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q2 }}%
-                </td>
-            </tr>
-                <tr>
-                <td> Q3: What is the average GPA, GRE, GRE V, GRE AW of applicants who provide these metrics?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: GPA={{ q3_gpa }}, GRE={{ q3_gre }}, GRE V={{ q3_gre_v }}, GRE AW={{ q3_gre_aw }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q4: What is their average GPA of American students in Fall 2025?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q4 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q5: What percent of entries for Fall 2025 are Acceptances (to two decimal places)?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q5 }}%
-                </td>
-            </tr>
-            <tr>
-                <td> Q6: What is the average GPA of applicants who applied for Fall 2025 who are Acceptances?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q6 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q7: How many entries are from applicants who applied to JHU for a masters degrees in Computer Science? </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q7 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q8: How many entries from 2025 are acceptances from applicants who applied to Georgetown University, MIT, Stanford University, or Carnegie Mellon University for a PhD in Computer Science? </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q8 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q9: Do you numbers for question 8 change if you use LLM Generated Fields (rather than your downloaded fields)?  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q9 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q10: How many International students (not American or Other), got into Johns Hopkins University  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q10 }}
-                </td>
-            </tr>
-            <tr>
-                <td> Q11: Average gpa of students who got into Harvard University for Computer Science  </td>
-            </tr>
-            <tr>
-                <td>
-                    Answer: {{ q11 }}
-                </td>
-            </tr>
-        </tbody>
-    </table>
-  </div>
 
-  <img src="{{ url_for('static', filename='profilepic.jpg') }}"
-       alt="Profile picture"
-       class="profilepic-icon ">
-</div>
+<table class="analysis-table"> 
+    <tbody>
+        <tr class="qa-odd">
+            <td> <b>Q1: How many entries do you have in your database who have applied for Fall 2026? </b><br>
+                Answer: Applicant Count: {{ q1 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q2: What percentage of entries are from international students (not American or Other) (to two decimal places)? </b> <br>
+                Answer: Percent International: {{ q2 }}%
+            </td>
+        </tr>
+            <tr class="qa-odd">
+            <td> <b>Q3: What is the average GPA, GRE, GRE V, GRE AW of applicants who provide these metrics? </b> <br>
+                Answer: Average GPA: {{ q3_gpa }}, Average GRE: {{ q3_gre }}, Average GRE V: {{ q3_gre_v }}, Average GRE AW: {{ q3_gre_aw }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q4: What is their average GPA of American students in Fall 2026? </b> <br>
+                Answer: Average GPA American: {{ q4 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q5: What percent of entries for Fall 2026 are Acceptances (to two decimal places)? </b><br>
+                Answer: Percent of Acceptances in Fall 2026: {{ q5 }}%
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q6: What is the average GPA of applicants who applied for Fall 2026 who are Acceptances? </b><br>
+                Answer: Average GPA of Fall 2026 Acceptances: {{ q6 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q7: How many entries are from applicants who applied to JHU for a masters degrees in Computer Science?</b> <br>
+                Answer: Applicants: {{ q7 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q8: How many entries from 2025 are acceptances from applicants who applied to Georgetown University, MIT, Stanford University, or Carnegie Mellon University for a PhD in Computer Science? </b><br>
+                Answer: Applicants: {{ q8 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q9: Do you numbers for question 8 change if you use LLM Generated Fields (rather than your downloaded fields)? </b> <br>
+                Answer: Applicants: {{ q9 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q10: How many International students (not American or Other) got into Johns Hopkins University </b> <br>
+                Answer: International Students: {{ q10 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q11: Average GPA of students who got into Harvard University for Computer Science  </b> <br>
+                Answer: Average GPA: {{ q11 }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
 {% endblock content %}
-
 
 
 
