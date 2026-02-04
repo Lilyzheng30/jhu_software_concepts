@@ -1,5 +1,6 @@
 import psycopg
 import json
+import os
 from flask import Flask, render_template, request, redirect, url_for
 
 from load_data import run_load
@@ -82,6 +83,45 @@ def run_llm_and_write_out_json():
     with open(out_json_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
 
+
+def merge_out_into_module2_out():
+    """Append only new URLs from out.json into module_2_out.json."""
+    base_dir = os.path.dirname(__file__)
+    master_path = os.path.join(base_dir, "module_2_out.json")
+    batch_path = os.path.join(base_dir, "out.json")
+
+    if os.path.exists(master_path):
+        with open(master_path, "r", encoding="utf-8") as f:
+            master_rows = json.load(f)
+    else:
+        master_rows = []
+
+    with open(batch_path, "r", encoding="utf-8") as f:
+        batch_rows = json.load(f)
+
+    seen_urls = {
+        (row.get("url") or "").strip()
+        for row in master_rows
+        if isinstance(row, dict) and row.get("url")
+    }
+
+    added = 0
+    for row in batch_rows:
+        if not isinstance(row, dict):
+            continue
+        url = (row.get("url") or "").strip()
+        if not url or url in seen_urls:
+            continue
+        master_rows.append(row)
+        seen_urls.add(url)
+        added += 1
+
+    with open(master_path, "w", encoding="utf-8") as f:
+        json.dump(master_rows, f, indent=2, ensure_ascii=False)
+
+    return added, len(master_rows)
+
+
 @app.route("/")
 def home():
     seeded_now = ensure_initial_dataset_loaded()
@@ -130,16 +170,28 @@ def home():
     )
 
 
-@app.route("/pull-data", methods=["GET", "POST"])
-def pull_data():
-    if request.method == "GET":
-        return redirect(url_for("home"))
+def handle_pull_data():
+    ok, status, seeded_now = run_pull_data_pipeline()
+    if not ok:
+        return redirect(url_for("home", status=status))
 
+    if seeded_now:
+        return redirect(
+            url_for(
+                "home",
+                status="Initial dataset loaded from module_2_out.json, then Pull Data added newest rows.",
+            )
+        )
+    return redirect(url_for("home", status=status))
+
+
+def run_pull_data_pipeline():
     global is_pulling
     if is_pulling:
-        return redirect(url_for("home", status="Pull Data is already running. Please wait."))
+        return False, "Pull Data is already running. Please wait.", False
 
     is_pulling = True
+    seeded_now = False
     try:
         seeded_now = ensure_initial_dataset_loaded()
         existing_urls = fetch_existing_urls()
@@ -149,33 +201,47 @@ def pull_data():
             output_file="module_2/llm_extend_applicant_data.json",
         )
         run_llm_and_write_out_json()
-        # Load LLM-enriched rows from module_3/out.json.
-        run_load(input_file="out.json")
+        added_rows, total_rows = merge_out_into_module2_out()
+        # Load cumulative master dataset.
+        run_load(input_file="module_2_out.json")
+        status = (
+            f"Pull Data completed. Added {added_rows} new rows. "
+            f"module_2_out now has {total_rows} rows."
+        )
+        return True, status, seeded_now
     except Exception as e:
-        return redirect(url_for("home", status=f"Pull Data failed: {e}"))
+        return False, f"Pull Data failed: {e}", seeded_now
     finally:
         is_pulling = False
 
-    if seeded_now:
+def handle_update_analysis():
+    if is_pulling:
         return redirect(
-            url_for(
-                "home",
-                status="Initial dataset loaded from module_2_out.json, then Pull Data added newest rows.",
-            )
+            url_for("home", status="Update Analysis is unavailable while Pull Data is running.")
         )
-    return redirect(url_for("home", status="Pull Data completed. Analysis now includes newest rows."))
+    return redirect(url_for("home", status="Analysis updated with the latest available results."))
+
+
+@app.route("/pull-data", methods=["GET", "POST"])
+def pull_data():
+    if request.method == "GET":
+        return redirect(url_for("home"))
+    return handle_pull_data()
+
+
+@app.route("/pull-data-silent", methods=["POST"])
+def pull_data_silent():
+    ok, status, _ = run_pull_data_pipeline()
+    if not ok:
+        return status, 409
+    return "", 204
 
 
 @app.route("/update-analysis", methods=["GET", "POST"])
 def update_analysis():
     if request.method == "GET":
         return redirect(url_for("home"))
-
-    if is_pulling:
-        return redirect(
-            url_for("home", status="Update Analysis is unavailable while Pull Data is running.")
-        )
-    return redirect(url_for("home", status="Analysis updated with the latest available results."))
+    return handle_update_analysis()
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@
     <div class="action-btn-row">
         <div class="action-col action-col-left">
             <p class="action-note">Pull Data fetches new GradCafe entries and stores in database <br> (May take a few minutes as data needs to be process through a LLM).</p>
-            <form method="POST" action="{{ url_for('pull_data') }}">
+            <form method="POST" action="{{ url_for('pull_data_silent') }}" target="pull_data_runner">
               <button type="submit" class="action-btn">Pull Data</button>
             </form>
         </div>
@@ -20,6 +20,7 @@
         </div>
     </div>
 </div>
+<iframe name="pull_data_runner" style="display:none;"></iframe>
 
 <table class="analysis-table"> 
     <tbody>
