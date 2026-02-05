@@ -97,7 +97,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (url) DO NOTHING;
 """
 
-def run_load(input_file="out.json"):
+def run_load(input_file="module_2_out.json"):
     connection = create_connection("postgres", "postgres", "abc123", "127.0.0.1", "5432")
     create_database(connection, "CREATE DATABASE sm_app")
     connection.close()

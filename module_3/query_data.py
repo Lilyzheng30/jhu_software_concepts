@@ -121,6 +121,49 @@ def execute_read_query(connection, query):
 
 if __name__ == "__main__":
     connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
-    for name in [f"q{i}" for i in range(1, 12)]:
-        print(name, execute_read_query(connection, QUERIES[name]))
+
+    def first_value(query):
+        rows = execute_read_query(connection, query)
+        if not rows:
+            return None
+        return rows[0][0]
+
+    applicant_count = first_value(QUERIES["q1"])
+    international_count = first_value(
+        "SELECT COUNT(*) FROM applicants WHERE us_or_international NOT IN ('American', 'Other');"
+    )
+    us_count = first_value(
+        "SELECT COUNT(*) FROM applicants WHERE us_or_international = 'American';"
+    )
+    other_count = first_value(
+        "SELECT COUNT(*) FROM applicants WHERE us_or_international = 'Other';"
+    )
+    percent_international = first_value(QUERIES["q2"])
+
+    q3_rows = execute_read_query(connection, QUERIES["q3"])
+    q3 = q3_rows[0] if q3_rows else (None, None, None, None)
+
+    avg_gpa_american = first_value(QUERIES["q4"])
+    acceptance_percent = first_value(QUERIES["q5"])
+    acceptance_count = first_value(
+        "SELECT COUNT(*) FROM applicants WHERE term = 'Fall 2026' AND status ILIKE 'Accepted on%';"
+    )
+    avg_gpa_acceptance = first_value(QUERIES["q6"])
+    jhu_masters_cs_count = first_value(QUERIES["q7"])
+
+    print(f"Applicant count: {applicant_count}")
+    print(f"International count: {international_count}")
+    print(f"US count: {us_count}")
+    print(f"Other count: {other_count}")
+    print(f"Percent International: {percent_international}")
+    print(
+        f"Average GPA: {q3[0]}, Average GRE: {q3[1]}, "
+        f"Average GRE V: {q3[2]}, Average GRE AW: {q3[3]}"
+    )
+    print(f"Average GPA American: {avg_gpa_american}")
+    print(f"Acceptance count: {acceptance_count}")
+    print(f"Acceptance percent: {acceptance_percent}")
+    print(f"Average GPA Acceptance: {avg_gpa_acceptance}")
+    print(f"JHU Masters Computer Science count: {jhu_masters_cs_count}")
+
     connection.close()
