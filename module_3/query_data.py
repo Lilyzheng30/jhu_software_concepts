@@ -2,6 +2,7 @@ import psycopg
 from psycopg import OperationalError
 
 
+# Query used
 QUERIES = {
     "q1": """
         SELECT COUNT(*)
@@ -91,6 +92,7 @@ QUERIES = {
 }
 
 
+# Create DB connection 
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     try:
         params = {
@@ -107,6 +109,7 @@ def create_connection(db_name, db_user, db_password, db_host, db_port):
         return None
 
 
+# Execute a SELECT query and return all rows
 def execute_read_query(connection, query):
     connection.autocommit = True
     cursor = connection.cursor()
@@ -122,6 +125,7 @@ def execute_read_query(connection, query):
 if __name__ == "__main__":
     connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
 
+    # for the console question output 
     def first_value(query):
         rows = execute_read_query(connection, query)
         if not rows:

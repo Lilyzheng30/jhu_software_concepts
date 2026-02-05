@@ -26,6 +26,7 @@ h3 {
   }
 
   
+  /* Main content width wrapper */
   main {
     width: 80%;
     margin: 0 auto;
@@ -36,6 +37,7 @@ h3 {
 }
 
 .analysis-table {
+  /* Light spacing between question rows */
   width: 100%;
   border-collapse: separate;
   border-spacing: 0 6px;
@@ -48,6 +50,7 @@ h3 {
 }
 
 .analysis-table .qa-odd td {
+  /* Subtle alternating row colors */
   background-color: #dce9f3;
 }
 
@@ -97,6 +100,7 @@ h3 {
 }
 
 .action-btn {
+  /* Rounded primary action buttons */
   background: #67a2dd;
   color: #ecf0f1;
   border: 1px solid #5a92cb;
@@ -116,6 +120,7 @@ h3 {
 }
 
 .status-popups {
+  /* Toast-like status stack in top-right */
   position: fixed;
   right: 16px;
   top: 16px;

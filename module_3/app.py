@@ -12,6 +12,7 @@ app = Flask(__name__)
 is_pulling = False
 
 
+# Open a DB connection for app reads/writes
 def get_db_connection():
     return psycopg.connect(
         dbname="sm_app",
@@ -22,12 +23,14 @@ def get_db_connection():
     )
 
 
+# Run query and return first value
 def fetch_one_value(cursor, query):
     cursor.execute(query)
     row = cursor.fetchone()
     return row[0] if row else None
 
 
+# Read current URLs to avoid redoing existing entries
 def fetch_existing_urls():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -38,8 +41,8 @@ def fetch_existing_urls():
     return urls
 
 
+# initiates from module_2_out.json only when table is empty
 def ensure_initial_dataset_loaded():
-    # Only seed from module_2_out.json when the applicants table is empty/missing.
     seeded = False
     try:
         conn = get_db_connection()
@@ -58,8 +61,8 @@ def ensure_initial_dataset_loaded():
     return seeded
 
 
+# Run local LLM step and convert jsonl output into out.json.
 def run_llm_and_write_out_json():
-    # Import lazily so app startup still works if LLM deps are missing.
     from module_2.llm_hosting.app import _cli_process_file
 
     input_path = "module_2/llm_extend_applicant_data.json"
@@ -84,6 +87,7 @@ def run_llm_and_write_out_json():
         json.dump(rows, f, indent=2, ensure_ascii=False)
 
 
+# Merge newly generated out.json rows into cumulative module_2_out.json.
 def merge_out_into_module2_out():
     """Append only new URLs from out.json into module_2_out.json."""
     base_dir = os.path.dirname(__file__)
@@ -123,6 +127,7 @@ def merge_out_into_module2_out():
 
 
 @app.route("/")
+# Render analysis page from current DB metrics.
 def home():
     seeded_now = ensure_initial_dataset_loaded()
     status_message = request.args.get("status")
@@ -170,6 +175,7 @@ def home():
     )
 
 
+# Web handler for Pull Data route 
 def handle_pull_data():
     ok, status, seeded_now = run_pull_data_pipeline()
     if not ok:
@@ -185,6 +191,7 @@ def handle_pull_data():
     return redirect(url_for("home", status=status))
 
 
+# Full Pull Data pipeline: scrape -> clean -> LLM -> merge -> load DB
 def run_pull_data_pipeline():
     global is_pulling
     if is_pulling:
@@ -214,6 +221,7 @@ def run_pull_data_pipeline():
     finally:
         is_pulling = False
 
+# Web handler for Update Analysis action
 def handle_update_analysis():
     if is_pulling:
         return redirect(
@@ -223,6 +231,7 @@ def handle_update_analysis():
 
 
 @app.route("/pull-data", methods=["GET", "POST"])
+# Standard pull-data endpoint used by form submits
 def pull_data():
     if request.method == "GET":
         return redirect(url_for("home"))
@@ -230,6 +239,7 @@ def pull_data():
 
 
 @app.route("/pull-data-silent", methods=["POST"])
+# Silent endpoint: run pull pipeline without page navigation
 def pull_data_silent():
     ok, status, _ = run_pull_data_pipeline()
     if not ok:
@@ -238,6 +248,7 @@ def pull_data_silent():
 
 
 @app.route("/update-analysis", methods=["GET", "POST"])
+# Update-analysis endpoint
 def update_analysis():
     if request.method == "GET":
         return redirect(url_for("home"))

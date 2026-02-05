@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 
+# Create a PostgreSQL connection for the provided DB settings
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     try:
         params = {
@@ -20,6 +21,7 @@ def create_connection(db_name, db_user, db_password, db_host, db_port):
         print(f"The error '{e}' occurred")
         return None
 
+# Run a database command
 def create_database(connection, query):
     connection.autocommit = True
     cursor = connection.cursor()
@@ -29,6 +31,7 @@ def create_database(connection, query):
     except Exception as e:
         print(f"The error '{e}' occurred")
 
+# Run a SQL statement
 def execute_query(connection, query):
     connection.autocommit = True
     cursor = connection.cursor()
@@ -38,6 +41,7 @@ def execute_query(connection, query):
     except OperationalError as e:
         print(f"The error '{e}' occurred")
 
+# Parse date formats from JSON
 def parse_date(s):
     if not s:
         return None
@@ -50,11 +54,13 @@ def parse_date(s):
             continue
     return None
 
+# Convert numeric text fields to float, keeping empty values as NULL
 def parse_float(s):
     if s is None or s =="":
         return None
     return float(s)
 
+# applicants table and setting the columns
 create_applicant_table = """
 CREATE TABLE IF NOT EXISTS applicants (
   p_id SERIAL PRIMARY KEY,
@@ -81,6 +87,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS applicants_url_unique_idx
 ON applicants (url);
 """
 
+# Keep only one row per URL if there is duplicate (oldest p_id wins)
 dedupe_existing_urls = """
 DELETE FROM applicants a
 USING applicants b
@@ -97,6 +104,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (url) DO NOTHING;
 """
 
+# Load JSON rows into PostgreSQL, creating DB/table/index
 def run_load(input_file="module_2_out.json"):
     connection = create_connection("postgres", "postgres", "abc123", "127.0.0.1", "5432")
     create_database(connection, "CREATE DATABASE sm_app")
@@ -104,7 +112,7 @@ def run_load(input_file="module_2_out.json"):
 
     connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
     execute_query(connection, create_applicant_table)
-    # Remove old duplicate URLs so the unique index can be created safely.
+    # Remove existing duplicate URLs before creating unique index
     execute_query(connection, dedupe_existing_urls)
     execute_query(connection, create_url_unique_index)
 
