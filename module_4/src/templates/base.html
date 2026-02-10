@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title> {% block title %}{% endblock title %}</title>
+  <!-- Links the external CSS stylesheet for styling the website -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <h2>Grad School Cafe Data Analysis</h2>
+  <h3>{% block pageheader %} {% endblock pageheader %}</h3>
+  <section>
+    <main>
+      <!-- Placeholder for page-specific content, with default text if not overridden -->
+      {% block content %}<p>No messages.</p>{% endblock content %}
+    </main>
+  </section>
+</body>
+</html>

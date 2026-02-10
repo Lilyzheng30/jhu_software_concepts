@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+<!-- Home Page -->
+
+{% block pageheader %}Analysis{% endblock pageheader %}
+
+{% block content %}
+<div class="analysis-top-right">
+    <div class="action-btn-row">
+        <div class="action-col action-col-left">
+            <p class="action-note">Pull Data fetches new GradCafe entries and stores in database <br> (May take a few minutes as data needs to be process through a LLM).</p>
+            <form method="POST" action="{{ url_for('pull_data_silent') }}" target="pull_data_runner">
+              <button type="submit" class="action-btn">Pull Data</button>
+            </form>
+        </div>
+        <div class="action-col action-col-right">
+            <p class="action-note">Update Analysis refreshes with the newest available results.</p>
+            <form method="POST" action="{{ url_for('update_analysis') }}">
+              <button type="submit" class="action-btn">Update Analysis</button>
+            </form>
+        </div>
+    </div>
+</div>
+<iframe name="pull_data_runner" style="display:none;"></iframe>
+
+<table class="analysis-table"> 
+    <tbody>
+        <tr class="qa-odd">
+            <td> <b>Q1: How many entries do you have in your database who have applied for Fall 2026? </b><br>
+                Answer: Applicant Count: {{ q1 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q2: What percentage of entries are from international students (not American or Other) (to two decimal places)? </b> <br>
+                Answer: Percent International: {{ q2 }}%
+            </td>
+        </tr>
+            <tr class="qa-odd">
+            <td> <b>Q3: What is the average GPA, GRE, GRE V, GRE AW of applicants who provide these metrics? </b> <br>
+                Answer: Average GPA: {{ q3_gpa }}, Average GRE: {{ q3_gre }}, Average GRE V: {{ q3_gre_v }}, Average GRE AW: {{ q3_gre_aw }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q4: What is their average GPA of American students in Fall 2026? </b> <br>
+                Answer: Average GPA American: {{ q4 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q5: What percent of entries for Fall 2026 are Acceptances (to two decimal places)? </b><br>
+                Answer: Percent of Acceptances in Fall 2026: {{ q5 }}%
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q6: What is the average GPA of applicants who applied for Fall 2026 who are Acceptances? </b><br>
+                Answer: Average GPA of Fall 2026 Acceptances: {{ q6 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q7: How many entries are from applicants who applied to JHU for a masters degrees in Computer Science?</b> <br>
+                Answer: Applicants: {{ q7 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q8: How many entries from 2025 are acceptances from applicants who applied to Georgetown University, MIT, Stanford University, or Carnegie Mellon University for a PhD in Computer Science? </b><br>
+                Answer: Applicants: {{ q8 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q9: Do you numbers for question 8 change if you use LLM Generated Fields (rather than your downloaded fields)? </b> <br>
+                Answer: Applicants: {{ q9 }}
+            </td>
+        </tr>
+        <tr class="qa-even">
+            <td> <b>Q10: How many International students (not American or Other) got into Johns Hopkins University </b> <br>
+                Answer: International Students: {{ q10 }}
+            </td>
+        </tr>
+        <tr class="qa-odd">
+            <td> <b>Q11: Average GPA of students who got into Harvard University for Computer Science  </b> <br>
+                Answer: Average GPA: {{ q11 }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+{% if is_pulling or status_message %}
+<div class="status-popups">
+    {% if is_pulling %}
+    <div class="status-popup status-popup-warn">Pull Data is running... please wait.</div>
+    {% endif %}
+    {% if status_message %}
+    <div class="status-popup status-popup-info">{{ status_message }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+{% endblock content %}
