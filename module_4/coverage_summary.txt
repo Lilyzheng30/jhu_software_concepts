@@ -1,0 +1,17 @@
+..........
+ERROR: Coverage failure: total of 45 is less than fail-under=100
+                                                                         [100%]
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.13.7-final-0 _______________
+
+Name                              Stmts   Miss  Cover   Missing
+---------------------------------------------------------------
+module_4/src/app.py                 147     28    81%   54-55, 58-59, 66-87, 101, 115, 135, 182, 185, 219-220, 237, 247, 254, 259
+module_4/src/load_data.py            71     10    86%   20-22, 30, 41-42, 47, 55, 60, 153
+module_4/src/module_2/clean.py       45     38    16%   5-6, 26-66, 72-73, 77-84, 88
+module_4/src/module_2/scrape.py     136    127     7%   7-70, 75-107, 126-185, 189-190, 194-198, 202
+module_4/src/query_data.py           53     47    11%   97-109, 114-122, 126-173
+---------------------------------------------------------------
+TOTAL                               452    250    45%
+FAIL Required test coverage of 100% not reached. Total coverage: 44.69%
+10 passed in 1.05s
