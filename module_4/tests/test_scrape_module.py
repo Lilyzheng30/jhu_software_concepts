@@ -40,6 +40,15 @@ def test_parse_row_and_meta():
 
 
 @pytest.mark.db
+def test_parse_row_short_row():
+    from bs4 import BeautifulSoup
+
+    html = "<tr><td>Only</td></tr>"
+    row = BeautifulSoup(html, "html.parser").find("tr")
+    assert parse_row(row, None) is None
+
+
+@pytest.mark.db
 def test_parse_detail_page(monkeypatch):
     html = """
     <main>
@@ -92,6 +101,16 @@ def test_parse_detail_page_missing_sections(monkeypatch):
 
 
 @pytest.mark.db
+def test_parse_detail_page_exception(monkeypatch):
+    def fake_urlopen(req):
+        raise Exception("boom")
+
+    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    data = parse_detail_page("https://example.com/error")
+    assert data == {}
+
+
+@pytest.mark.db
 def test_scrape_data_collects_entries(monkeypatch):
     list_html = """
     <table>
@@ -123,6 +142,18 @@ def test_scrape_data_collects_entries(monkeypatch):
     assert len(entries) == 1
     assert entries[0]["semester_year_start_raw"] == "Fall 2026"
     assert entries[0]["gpa_raw"] == "3.9"
+
+
+@pytest.mark.db
+def test_scrape_data_breaks_on_no_rows(monkeypatch):
+    html = "<table><tr><th>Header</th></tr></table>"
+
+    def fake_urlopen(req):
+        return _FakeResp(html)
+
+    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    entries = scrape_data(existing_urls=set(), stop_after_existing=1)
+    assert entries == []
 
 
 @pytest.mark.db

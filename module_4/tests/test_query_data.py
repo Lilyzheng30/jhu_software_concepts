@@ -101,3 +101,18 @@ def test_query_data_main_runs(monkeypatch, capsys):
     runpy.run_module("query_data", run_name="__main__")
     out = capsys.readouterr().out
     assert "Applicant count:" in out
+
+
+@pytest.mark.db
+def test_first_value_none_path(monkeypatch):
+    # Run __main__ and then call first_value with empty rows to hit line 132.
+    import runpy
+
+    g = runpy.run_module("query_data", run_name="__main__")
+
+    def fake_execute_read_query(conn, query):
+        return []
+
+    g["execute_read_query"] = fake_execute_read_query
+    g["connection"] = object()
+    assert g["first_value"]("SELECT 1") is None
