@@ -8,7 +8,11 @@ from module_2.clean import run_clean
 from module_2.scrape import run_scrape
 from query_data import QUERIES
 
-app = Flask(__name__)
+def create_app():
+    app = Flask(__name__)
+    return app
+
+app = create_app()
 is_pulling = False
 
 

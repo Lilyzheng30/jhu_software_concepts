@@ -52,7 +52,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -95,11 +94,14 @@
 </div>
 <p>By default it connects to PostgreSQL at <code class="docutils literal notranslate"><span class="pre">127.0.0.1:5432</span></code> with database
 <code class="docutils literal notranslate"><span class="pre">sm_app</span></code> and user <code class="docutils literal notranslate"><span class="pre">postgres</span></code> (see <code class="docutils literal notranslate"><span class="pre">module_4/src/app.py</span></code>).</p>
+<p>The Flask web app runs at <code class="docutils literal notranslate"><span class="pre">0.0.0.0:8080</span></code> by default.</p>
 </section>
 <section id="environment-variables">
 <h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading"></a></h2>
 <p>The current implementation uses hardcoded DB settings in <code class="docutils literal notranslate"><span class="pre">module_4/src/app.py</span></code>.
-If you add <code class="docutils literal notranslate"><span class="pre">DATABASE_URL</span></code> support later, document it here.</p>
+Equivalent DATABASE_URL for the current setup is:</p>
+<p><code class="docutils literal notranslate"><span class="pre">postgresql://postgres:abc123&#64;127.0.0.1:5432/sm_app</span></code></p>
+<p>If you add <code class="docutils literal notranslate"><span class="pre">DATABASE_URL</span></code> support later, document it here.</p>
 </section>
 <section id="run-tests">
 <h2>Run Tests<a class="headerlink" href="#run-tests" title="Link to this heading"></a></h2>

@@ -68,6 +68,15 @@ def test_routes_exist(app_module):
 
 
 @pytest.mark.web
+def test_create_app(app_module):
+    from flask import Flask
+
+    app = app_module.create_app()
+    assert app is not None
+    assert isinstance(app, Flask)
+
+
+@pytest.mark.web
 def test_get_home_page_renders(app_module):
     client = app_module.app.test_client()
     resp = client.get("/")

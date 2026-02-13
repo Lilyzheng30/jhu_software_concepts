@@ -1,16 +1,28 @@
-....................................................................     [100%]
+.....................................................................    [100%]
+=============================== warnings summary ===============================
+tests/test_clean_module.py::test_run_clean_main
+  <frozen runpy>:128: RuntimeWarning: 'module_2.clean' found in sys.modules after import of package 'module_2', but prior to execution of 'module_2.clean'; this may result in unpredictable behaviour
+
+tests/test_llm_hosting_app.py::test_main_serve_branch_safe
+tests/test_llm_hosting_app.py::test_main_cli_branch_safe
+  <frozen runpy>:128: RuntimeWarning: 'module_2.llm_hosting.app' found in sys.modules after import of package 'module_2.llm_hosting', but prior to execution of 'module_2.llm_hosting.app'; this may result in unpredictable behaviour
+
+tests/test_scrape_module.py::test_scrape_main
+  <frozen runpy>:128: RuntimeWarning: 'module_2.scrape' found in sys.modules after import of package 'module_2', but prior to execution of 'module_2.scrape'; this may result in unpredictable behaviour
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================================ tests coverage ================================
 _______________ coverage: platform darwin, python 3.13.7-final-0 _______________
 
 Name                                       Stmts   Miss  Cover   Missing
 ------------------------------------------------------------------------
-module_4/src/app.py                          147      0   100%
+module_4/src/app.py                          150      0   100%
 module_4/src/load_data.py                     71      0   100%
 module_4/src/module_2/clean.py                45      0   100%
 module_4/src/module_2/llm_hosting/app.py     169      0   100%
 module_4/src/module_2/scrape.py              136      0   100%
 module_4/src/query_data.py                    53      0   100%
 ------------------------------------------------------------------------
-TOTAL                                        621      0   100%
+TOTAL                                        624      0   100%
 Required test coverage of 100% reached. Total coverage: 100.00%
-68 passed, 4 warnings in 411.33s (0:06:51)
+69 passed, 4 warnings in 334.57s (0:05:34)

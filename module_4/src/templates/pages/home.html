@@ -9,13 +9,13 @@
         <div class="action-col action-col-left">
             <p class="action-note">Pull Data fetches new GradCafe entries and stores in database <br> (May take a few minutes as data needs to be process through a LLM).</p>
             <form method="POST" action="{{ url_for('pull_data_silent') }}" target="pull_data_runner">
-              <button type="submit" class="action-btn">Pull Data</button>
+              <button type="submit" class="action-btn" data-testid="pull-data-btn">Pull Data</button>
             </form>
         </div>
         <div class="action-col action-col-right">
             <p class="action-note">Update Analysis refreshes with the newest available results.</p>
             <form method="POST" action="{{ url_for('update_analysis') }}">
-              <button type="submit" class="action-btn">Update Analysis</button>
+              <button type="submit" class="action-btn" data-testid="update-analysis-btn">Update Analysis</button>
             </form>
         </div>
     </div>

@@ -9,6 +9,21 @@ Grad Cafe Analytics Documentation
 Documentation for the Grad Cafe Analytics application.
 
 
+.. automodule:: module_2.scrape
+   :members:
+
+.. automodule:: module_2.clean
+   :members:
+
+.. automodule:: load_data
+   :members:
+
+.. automodule:: query_data
+   :members:
+
+.. automodule:: app
+   :members:
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -16,4 +31,3 @@ Documentation for the Grad Cafe Analytics application.
    overview
    architecture
    testing
-   api
