@@ -1,16 +1,4 @@
 ....................................................................     [100%]
-=============================== warnings summary ===============================
-tests/test_clean_module.py::test_run_clean_main
-  <frozen runpy>:128: RuntimeWarning: 'module_2.clean' found in sys.modules after import of package 'module_2', but prior to execution of 'module_2.clean'; this may result in unpredictable behaviour
-
-tests/test_llm_hosting_app.py::test_main_serve_branch_safe
-tests/test_llm_hosting_app.py::test_main_cli_branch_safe
-  <frozen runpy>:128: RuntimeWarning: 'module_2.llm_hosting.app' found in sys.modules after import of package 'module_2.llm_hosting', but prior to execution of 'module_2.llm_hosting.app'; this may result in unpredictable behaviour
-
-tests/test_scrape_module.py::test_scrape_main
-  <frozen runpy>:128: RuntimeWarning: 'module_2.scrape' found in sys.modules after import of package 'module_2', but prior to execution of 'module_2.scrape'; this may result in unpredictable behaviour
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================================ tests coverage ================================
 _______________ coverage: platform darwin, python 3.13.7-final-0 _______________
 
