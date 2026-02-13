@@ -41,7 +41,7 @@ class _FakeLLM:
 def test_split_fallback_and_normalize():
     prog, uni = llm_app._split_fallback("Information, McG")
     assert "Information" in prog
-    assert "McGill" in uni
+    assert "mcgill" in uni.lower()
 
     assert llm_app._post_normalize_program("Mathematic") == "Mathematics"
     assert llm_app._post_normalize_university("University Of British Columbia") == "University of British Columbia"

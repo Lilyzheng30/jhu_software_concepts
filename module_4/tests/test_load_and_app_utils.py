@@ -47,6 +47,7 @@ def test_parse_date_and_float():
     assert load_data.parse_date("January 02, 2025") is not None
     assert load_data.parse_date("2025-01-02") is not None
     assert load_data.parse_date("") is None
+    assert load_data.parse_date("bad-date") is None
     assert load_data.parse_float("") is None
     assert load_data.parse_float(None) is None
     assert load_data.parse_float("3.5") == 3.5
@@ -82,6 +83,51 @@ def test_merge_out_into_module2_out(tmp_path, monkeypatch):
     added, total = app.merge_out_into_module2_out()
     assert added == 1
     assert total == 2
+
+
+@pytest.mark.db
+def test_merge_out_into_module2_out_skip_non_dict(tmp_path, monkeypatch):
+    base_dir = tmp_path
+    master = base_dir / "module_2_out.json"
+    batch = base_dir / "out.json"
+
+    master.write_text(json.dumps([{"url": "u1"}]))
+    batch.write_text(json.dumps([{"url": "u2"}, "bad-row"]))
+
+    monkeypatch.setattr(app, "__file__", str(base_dir / "app.py"))
+
+    added, total = app.merge_out_into_module2_out()
+    assert added == 1
+    assert total == 2
+
+
+@pytest.mark.web
+def test_home_status_message(monkeypatch):
+    class DummyCursor:
+        def __init__(self):
+            self.calls = 0
+        def execute(self, _):
+            self.calls += 1
+        def fetchone(self):
+            if self.calls == 3:
+                return (0.0, 0.0, 0.0, 0.0)
+            return (0,)
+        def close(self):
+            return None
+
+    class DummyConn:
+        def cursor(self):
+            return DummyCursor()
+        def close(self):
+            return None
+
+    monkeypatch.setattr(app, "get_db_connection", lambda: DummyConn())
+    monkeypatch.setattr(app, "ensure_initial_dataset_loaded", lambda: True)
+
+    client = app.app.test_client()
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "initial data was loaded" in resp.get_data(as_text=True).lower()
 
 
 @pytest.mark.db
@@ -150,6 +196,16 @@ def test_create_connection_and_execute_query_error(monkeypatch):
     assert conn is not None
 
     load_data.execute_query(conn, "SELECT 1")
+
+
+@pytest.mark.db
+def test_create_connection_failure(monkeypatch):
+    def fake_connect(**_):
+        raise load_data.OperationalError("boom")
+
+    monkeypatch.setattr(load_data.psycopg, "connect", fake_connect)
+    conn = load_data.create_connection("db", "user", "pw", "host", "5432")
+    assert conn is None
 
 
 @pytest.mark.db

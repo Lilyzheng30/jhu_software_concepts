@@ -1,17 +1,6 @@
-........................F............................
-ERROR: Coverage failure: total of 94 is less than fail-under=100
+.........................................................
+ERROR: Coverage failure: total of 95 is less than fail-under=100
                                                                          [100%]
-=================================== FAILURES ===================================
-______________________ test_split_fallback_and_normalize _______________________
-
-    @pytest.mark.db
-    def test_split_fallback_and_normalize():
-        prog, uni = llm_app._split_fallback("Information, McG")
-        assert "Information" in prog
->       assert "McGill" in uni
-E       AssertionError: assert 'McGill' in 'Mcgill University'
-
-module_4/tests/test_llm_hosting_app.py:44: AssertionError
 =============================== warnings summary ===============================
 tests/test_clean_module.py::test_run_clean_main
   <frozen runpy>:128: RuntimeWarning: 'module_2.clean' found in sys.modules after import of package 'module_2', but prior to execution of 'module_2.clean'; this may result in unpredictable behaviour
@@ -25,15 +14,13 @@ _______________ coverage: platform darwin, python 3.13.7-final-0 _______________
 
 Name                                       Stmts   Miss  Cover   Missing
 ------------------------------------------------------------------------
-module_4/src/app.py                          147      2    99%   115, 135
-module_4/src/load_data.py                     71      4    94%   20-22, 55
+module_4/src/app.py                          147      0   100%
+module_4/src/load_data.py                     71      0   100%
 module_4/src/module_2/clean.py                45      0   100%
 module_4/src/module_2/llm_hosting/app.py     169     12    93%   44, 120, 154, 161, 179, 191-192, 203, 262, 269, 381-382
 module_4/src/module_2/scrape.py              136     16    88%   35, 59-60, 77, 132-133, 151, 173, 189-190, 194-198, 202
-module_4/src/query_data.py                    53      3    94%   121-122, 132
+module_4/src/query_data.py                    53      1    98%   132
 ------------------------------------------------------------------------
-TOTAL                                        621     37    94%
-FAIL Required test coverage of 100% not reached. Total coverage: 94.04%
-=========================== short test summary info ============================
-FAILED module_4/tests/test_llm_hosting_app.py::test_split_fallback_and_normalize
-1 failed, 52 passed, 2 warnings in 1.34s
+TOTAL                                        621     29    95%
+FAIL Required test coverage of 100% not reached. Total coverage: 95.33%
+57 passed, 2 warnings in 1.32s

@@ -48,6 +48,24 @@ def test_create_connection_failure(monkeypatch):
 
 
 @pytest.mark.db
+def test_execute_read_query_exception(monkeypatch):
+    class BadCursor:
+        def execute(self, _):
+            raise query_data.OperationalError("boom")
+        def fetchall(self):
+            return []
+
+    class BadConn:
+        def __init__(self):
+            self.autocommit = False
+        def cursor(self):
+            return BadCursor()
+
+    rows = query_data.execute_read_query(BadConn(), "SELECT 1;")
+    assert rows is None
+
+
+@pytest.mark.db
 def test_query_data_main_runs(monkeypatch, capsys):
     import runpy
 
