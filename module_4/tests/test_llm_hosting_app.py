@@ -45,6 +45,12 @@ def test_split_fallback_and_normalize():
 
     assert llm_app._post_normalize_program("Mathematic") == "Mathematics"
     assert llm_app._post_normalize_university("University Of British Columbia") == "University of British Columbia"
+    # UBC expansion path in _split_fallback
+    prog2, uni2 = llm_app._split_fallback("Math, UBC")
+    assert "University of British Columbia" in uni2
+    # Unknown university fallback
+    prog3, uni3 = llm_app._split_fallback("Math")
+    assert uni3 == "Unknown"
 
 
 @pytest.mark.db
@@ -54,6 +60,10 @@ def test_build_program_text_and_fallback():
 
     uni = llm_app._fallback_university({"university": "McGill University"}, "Unknown")
     assert "mcgill" in uni.lower()
+    # Empty model university
+    assert llm_app._fallback_university({"university": "X"}, "") == ""
+    # Only program present
+    assert llm_app._build_program_text({"program": "CS"}) == "CS"
 
 
 @pytest.mark.db
@@ -126,6 +136,27 @@ def test_best_match_and_load_llm(monkeypatch):
     llm = llm_app._load_llm()
     assert llm is not None
     assert llm_app._best_match("Math", ["Math", "Physics"]) == "Math"
+    # _best_match with empty candidates
+    assert llm_app._best_match("Math", []) is None
+    # reuse cached _LLM
+    assert llm_app._load_llm() is llm
+
+
+@pytest.mark.db
+def test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch):
+    p = tmp_path / "lines.txt"
+    p.write_text("A\n\nB\n")
+    lines = llm_app._read_lines(str(p))
+    assert lines == ["A", "B"]
+
+    # Canonical program present
+    monkeypatch.setattr(llm_app, "CANON_PROGS", ["Computer Science"])
+    assert llm_app._post_normalize_program("Computer Science") == "Computer Science"
+
+    # Abbreviation path and canonical university path
+    monkeypatch.setattr(llm_app, "CANON_UNIS", ["McGill University"])
+    assert llm_app._post_normalize_university("McG") == "McGill University"
+    assert llm_app._post_normalize_university("McGill University") == "McGill University"
 
 
 @pytest.mark.db
@@ -138,4 +169,14 @@ def test_main_cli_path(monkeypatch, tmp_path):
     monkeypatch.setattr(llm_app, "_load_llm", lambda: _FakeLLM())
     monkeypatch.setattr(sys, "argv", ["app.py", "--file", str(inp), "--out", str(tmp_path / "o.jsonl")])
 
+    runpy.run_module("module_2.llm_hosting.app", run_name="__main__")
+
+
+@pytest.mark.db
+def test_main_serve_branch(monkeypatch):
+    import runpy
+    import flask
+
+    monkeypatch.setattr(flask.Flask, "run", lambda *_, **__: None)
+    monkeypatch.setattr(sys, "argv", ["app.py", "--serve"])
     runpy.run_module("module_2.llm_hosting.app", run_name="__main__")
