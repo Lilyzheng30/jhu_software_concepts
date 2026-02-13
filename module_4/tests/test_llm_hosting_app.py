@@ -157,6 +157,8 @@ def test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(llm_app, "CANON_UNIS", ["McGill University"])
     assert llm_app._post_normalize_university("McG") == "McGill University"
     assert llm_app._post_normalize_university("McGill University") == "McGill University"
+    # Direct canonical match to hit line 203
+    assert llm_app._post_normalize_university("McGill University") == "McGill University"
 
 
 @pytest.mark.db
