@@ -165,3 +165,32 @@ def test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch):
 def test_post_normalize_university_canon_direct(monkeypatch):
     monkeypatch.setattr(llm_app, "CANON_UNIS", ["Stanford University"])
     assert llm_app._post_normalize_university("Stanford University") == "Stanford University"
+
+
+@pytest.mark.db
+def test_main_serve_branch_safe(monkeypatch):
+    import runpy
+    import flask
+
+    monkeypatch.setattr(flask.Flask, "run", lambda *_, **__: None)
+    monkeypatch.setattr(sys, "argv", ["app.py", "--serve"])
+    runpy.run_module("module_2.llm_hosting.app", run_name="__main__")
+
+
+@pytest.mark.db
+def test_main_cli_branch_safe(monkeypatch, tmp_path):
+    import runpy
+
+    inp = tmp_path / "in.json"
+    inp.write_text(json.dumps([{"program": "CS", "university": "Test University"}]))
+
+    monkeypatch.setattr(sys, "argv", ["app.py", "--file", str(inp), "--out", str(tmp_path / "o.jsonl")])
+
+    def fake_cli(*_, **__):
+        return None
+
+    runpy.run_module(
+        "module_2.llm_hosting.app",
+        run_name="__main__",
+        init_globals={"_cli_process_file": fake_cli},
+    )
