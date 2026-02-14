@@ -1,3 +1,4 @@
+# Tests pipeline helpers and handler branches.
 import os
 import sys
 import json
@@ -12,6 +13,7 @@ import app as app_module
 
 
 @pytest.mark.buttons
+# test_run_pull_data_pipeline_busy()
 def test_run_pull_data_pipeline_busy():
     app_module.is_pulling = True
     ok, status, seeded = app_module.run_pull_data_pipeline()
@@ -22,6 +24,7 @@ def test_run_pull_data_pipeline_busy():
 
 
 @pytest.mark.buttons
+# test_run_pull_data_pipeline_exception(monkeypatch)
 def test_run_pull_data_pipeline_exception(monkeypatch):
     def boom(*_, **__):
         raise Exception("fail")
@@ -34,6 +37,7 @@ def test_run_pull_data_pipeline_exception(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_handle_pull_data_redirects(monkeypatch)
 def test_handle_pull_data_redirects(monkeypatch):
     monkeypatch.setattr(app_module, "run_pull_data_pipeline", lambda: (False, "status", False))
     with app_module.app.test_request_context("/pull-data"):
@@ -53,6 +57,7 @@ def test_handle_pull_data_redirects(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_pull_data_get_redirect()
 def test_pull_data_get_redirect():
     client = app_module.app.test_client()
     resp = client.get("/pull-data")
@@ -60,6 +65,7 @@ def test_pull_data_get_redirect():
 
 
 @pytest.mark.buttons
+# test_pull_data_silent_success(monkeypatch)
 def test_pull_data_silent_success(monkeypatch):
     monkeypatch.setattr(app_module, "run_pull_data_pipeline", lambda: (True, "ok", False))
     client = app_module.app.test_client()
@@ -68,6 +74,7 @@ def test_pull_data_silent_success(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_pull_data_silent_busy(monkeypatch)
 def test_pull_data_silent_busy(monkeypatch):
     monkeypatch.setattr(app_module, "run_pull_data_pipeline", lambda: (False, "busy", False))
     client = app_module.app.test_client()
@@ -76,6 +83,7 @@ def test_pull_data_silent_busy(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_update_analysis_get_redirect()
 def test_update_analysis_get_redirect():
     client = app_module.app.test_client()
     resp = client.get("/update-analysis")
@@ -83,6 +91,7 @@ def test_update_analysis_get_redirect():
 
 
 @pytest.mark.buttons
+# test_handle_update_analysis_busy()
 def test_handle_update_analysis_busy():
     app_module.is_pulling = True
     with app_module.app.test_request_context("/update-analysis"):
@@ -92,6 +101,7 @@ def test_handle_update_analysis_busy():
 
 
 @pytest.mark.buttons
+# test_handle_update_analysis_not_busy()
 def test_handle_update_analysis_not_busy():
     app_module.is_pulling = False
     with app_module.app.test_request_context("/update-analysis"):
@@ -100,6 +110,7 @@ def test_handle_update_analysis_not_busy():
 
 
 @pytest.mark.buttons
+# test_pull_data_post_calls_handler(monkeypatch)
 def test_pull_data_post_calls_handler(monkeypatch):
     monkeypatch.setattr(app_module, "handle_pull_data", lambda: ("ok", 302))
     client = app_module.app.test_client()
@@ -108,6 +119,7 @@ def test_pull_data_post_calls_handler(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_update_analysis_post_calls_handler(monkeypatch)
 def test_update_analysis_post_calls_handler(monkeypatch):
     monkeypatch.setattr(app_module, "handle_update_analysis", lambda: ("ok", 302))
     client = app_module.app.test_client()
@@ -116,6 +128,7 @@ def test_update_analysis_post_calls_handler(monkeypatch):
 
 
 @pytest.mark.buttons
+# test_run_llm_and_write_out_json(monkeypatch, tmp_path)
 def test_run_llm_and_write_out_json(monkeypatch, tmp_path):
     # Ensure we run in src so relative paths resolve.
     monkeypatch.chdir(SRC_PATH)
@@ -136,6 +149,7 @@ def test_run_llm_and_write_out_json(monkeypatch, tmp_path):
 
 
 @pytest.mark.buttons
+# test_app_main(monkeypatch)
 def test_app_main(monkeypatch):
     import flask
 

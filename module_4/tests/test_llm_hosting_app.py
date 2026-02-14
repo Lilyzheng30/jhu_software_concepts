@@ -1,3 +1,4 @@
+# Tests LLM standardization utilities with mocks.
 import os
 import sys
 import json
@@ -38,6 +39,7 @@ class _FakeLLM:
 
 
 @pytest.mark.db
+# test_split_fallback_and_normalize()
 def test_split_fallback_and_normalize():
     prog, uni = llm_app._split_fallback("Information, McG")
     assert "Information" in prog
@@ -54,6 +56,7 @@ def test_split_fallback_and_normalize():
 
 
 @pytest.mark.db
+# test_build_program_text_and_fallback()
 def test_build_program_text_and_fallback():
     row = {"program": "CS", "university": "JHU"}
     assert llm_app._build_program_text(row) == "CS, JHU"
@@ -67,6 +70,7 @@ def test_build_program_text_and_fallback():
 
 
 @pytest.mark.db
+# test_call_llm_parses_json(monkeypatch)
 def test_call_llm_parses_json(monkeypatch):
     monkeypatch.setattr(llm_app, "_load_llm", lambda: _FakeLLM())
     result = llm_app._call_llm("Computer Science, Test University")
@@ -75,6 +79,7 @@ def test_call_llm_parses_json(monkeypatch):
 
 
 @pytest.mark.db
+# test_call_llm_fallback_path(monkeypatch)
 def test_call_llm_fallback_path(monkeypatch):
     class BadLLM:
         def create_chat_completion(self, **_):
@@ -86,6 +91,7 @@ def test_call_llm_fallback_path(monkeypatch):
 
 
 @pytest.mark.db
+# test_normalize_input()
 def test_normalize_input():
     assert llm_app._normalize_input([]) == []
     assert llm_app._normalize_input({"rows": [{"a": 1}]}) == [{"a": 1}]
@@ -93,6 +99,7 @@ def test_normalize_input():
 
 
 @pytest.mark.db
+# test_standardize_endpoint(monkeypatch)
 def test_standardize_endpoint(monkeypatch):
     monkeypatch.setattr(llm_app, "_load_llm", lambda: _FakeLLM())
 
@@ -108,6 +115,7 @@ def test_standardize_endpoint(monkeypatch):
 
 
 @pytest.mark.db
+# test_health_endpoint()
 def test_health_endpoint():
     client = llm_app.app.test_client()
     resp = client.get("/")
@@ -116,6 +124,7 @@ def test_health_endpoint():
 
 
 @pytest.mark.db
+# test_cli_process_file(monkeypatch, tmp_path)
 def test_cli_process_file(monkeypatch, tmp_path):
     monkeypatch.setattr(llm_app, "_load_llm", lambda: _FakeLLM())
 
@@ -129,6 +138,7 @@ def test_cli_process_file(monkeypatch, tmp_path):
 
 
 @pytest.mark.db
+# test_best_match_and_load_llm(monkeypatch)
 def test_best_match_and_load_llm(monkeypatch):
     llm_app._LLM = None
     monkeypatch.setattr(llm_app, "hf_hub_download", lambda **_: "models/fake.gguf")
@@ -143,6 +153,7 @@ def test_best_match_and_load_llm(monkeypatch):
 
 
 @pytest.mark.db
+# test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch)
 def test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch):
     p = tmp_path / "lines.txt"
     p.write_text("A\n\nB\n")
@@ -162,12 +173,14 @@ def test_read_lines_and_post_normalize_paths(tmp_path, monkeypatch):
 
 
 @pytest.mark.db
+# test_post_normalize_university_canon_direct(monkeypatch)
 def test_post_normalize_university_canon_direct(monkeypatch):
     monkeypatch.setattr(llm_app, "CANON_UNIS", ["Stanford University"])
     assert llm_app._post_normalize_university("Stanford University") == "Stanford University"
 
 
 @pytest.mark.db
+# test_main_serve_branch_safe(monkeypatch)
 def test_main_serve_branch_safe(monkeypatch):
     import runpy
     import flask
@@ -178,6 +191,7 @@ def test_main_serve_branch_safe(monkeypatch):
 
 
 @pytest.mark.db
+# test_main_cli_branch_safe(monkeypatch, tmp_path)
 def test_main_cli_branch_safe(monkeypatch, tmp_path):
     import runpy
 

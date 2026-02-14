@@ -1,3 +1,4 @@
+# End-to-end tests for pull -> update -> render flows.
 import os
 import sys
 import json
@@ -59,6 +60,7 @@ def fake_rows(tmp_path):
 
 
 @pytest.mark.integration
+# test_end_to_end_flow(app_module, fake_rows, monkeypatch)
 def test_end_to_end_flow(app_module, fake_rows, monkeypatch):
     # Patch pipeline steps to avoid network/LLM.
     monkeypatch.setattr(app_module, "run_scrape", lambda **_: [])
@@ -96,6 +98,7 @@ def test_end_to_end_flow(app_module, fake_rows, monkeypatch):
 
 
 @pytest.mark.integration
+# test_multiple_pulls_are_idempotent(app_module, fake_rows, monkeypatch)
 def test_multiple_pulls_are_idempotent(app_module, fake_rows, monkeypatch):
     monkeypatch.setattr(app_module, "run_scrape", lambda **_: [])
     monkeypatch.setattr(app_module, "run_clean", lambda **_: [])

@@ -1,3 +1,4 @@
+# Tests scrape parsing and edge cases with mocked HTML.
 import os
 import sys
 import pytest
@@ -18,6 +19,7 @@ class _FakeResp:
 
 
 @pytest.mark.db
+# test_parse_row_and_meta()
 def test_parse_row_and_meta():
     from bs4 import BeautifulSoup
 
@@ -40,6 +42,7 @@ def test_parse_row_and_meta():
 
 
 @pytest.mark.db
+# test_parse_row_short_row()
 def test_parse_row_short_row():
     from bs4 import BeautifulSoup
 
@@ -49,6 +52,7 @@ def test_parse_row_short_row():
 
 
 @pytest.mark.db
+# test_parse_detail_page(monkeypatch)
 def test_parse_detail_page(monkeypatch):
     html = """
     <main>
@@ -84,6 +88,7 @@ def test_parse_detail_page(monkeypatch):
 
 
 @pytest.mark.db
+# test_parse_detail_page_missing_sections(monkeypatch)
 def test_parse_detail_page_missing_sections(monkeypatch):
     def fake_urlopen(req):
         return _FakeResp("<html><body>No main here</body></html>")
@@ -101,6 +106,7 @@ def test_parse_detail_page_missing_sections(monkeypatch):
 
 
 @pytest.mark.db
+# test_parse_detail_page_exception(monkeypatch)
 def test_parse_detail_page_exception(monkeypatch):
     def fake_urlopen(req):
         raise Exception("boom")
@@ -111,6 +117,7 @@ def test_parse_detail_page_exception(monkeypatch):
 
 
 @pytest.mark.db
+# test_scrape_data_collects_entries(monkeypatch)
 def test_scrape_data_collects_entries(monkeypatch):
     list_html = """
     <table>
@@ -145,6 +152,7 @@ def test_scrape_data_collects_entries(monkeypatch):
 
 
 @pytest.mark.db
+# test_scrape_data_breaks_on_no_rows(monkeypatch)
 def test_scrape_data_breaks_on_no_rows(monkeypatch):
     html = "<table><tr><th>Header</th></tr></table>"
 
@@ -157,6 +165,7 @@ def test_scrape_data_breaks_on_no_rows(monkeypatch):
 
 
 @pytest.mark.db
+# test_scrape_data_handles_fetch_error(monkeypatch)
 def test_scrape_data_handles_fetch_error(monkeypatch):
     def fake_urlopen(req):
         raise Exception("boom")
@@ -168,6 +177,7 @@ def test_scrape_data_handles_fetch_error(monkeypatch):
 
 
 @pytest.mark.db
+# test_scrape_data_stops_on_existing(monkeypatch)
 def test_scrape_data_stops_on_existing(monkeypatch):
     list_html = """
     <table>
@@ -189,6 +199,7 @@ def test_scrape_data_stops_on_existing(monkeypatch):
 
 
 @pytest.mark.db
+# test_save_data_and_run_scrape(monkeypatch, tmp_path)
 def test_save_data_and_run_scrape(monkeypatch, tmp_path):
     from module_2 import scrape as scrape_mod
 
@@ -201,6 +212,7 @@ def test_save_data_and_run_scrape(monkeypatch, tmp_path):
 
 
 @pytest.mark.db
+# test_scrape_main(monkeypatch)
 def test_scrape_main(monkeypatch):
     import runpy
 
@@ -212,6 +224,7 @@ def test_scrape_main(monkeypatch):
 
 
 @pytest.mark.db
+# test_existing_continue_branch(monkeypatch)
 def test_existing_continue_branch(monkeypatch):
     list_html = """
     <table>
@@ -233,6 +246,7 @@ def test_existing_continue_branch(monkeypatch):
 
 
 @pytest.mark.db
+# test_parse_detail_page_short_spans(monkeypatch)
 def test_parse_detail_page_short_spans(monkeypatch):
     html = """
     <main>

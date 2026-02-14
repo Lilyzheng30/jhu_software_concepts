@@ -1,3 +1,4 @@
+# Tests analysis labels and percentage formatting.
 import os
 import sys
 import pytest
@@ -47,6 +48,7 @@ def app_module(monkeypatch):
 
 
 @pytest.mark.analysis
+# test_labels_and_percentage_format(app_module)
 def test_labels_and_percentage_format(app_module):
     client = app_module.app.test_client()
     resp = client.get("/analysis")

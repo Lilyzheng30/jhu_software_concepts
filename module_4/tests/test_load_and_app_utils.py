@@ -43,6 +43,7 @@ class _Conn:
 
 
 @pytest.mark.db
+# test_parse_date_and_float()
 def test_parse_date_and_float():
     assert load_data.parse_date("January 02, 2025") is not None
     assert load_data.parse_date("2025-01-02") is not None
@@ -54,12 +55,14 @@ def test_parse_date_and_float():
 
 
 @pytest.mark.db
+# test_fetch_one_value()
 def test_fetch_one_value():
     cur = _Cursor(fetchone_value=(7,))
     assert app.fetch_one_value(cur, "SELECT 7") == 7
 
 
 @pytest.mark.db
+# test_fetch_existing_urls(monkeypatch)
 def test_fetch_existing_urls(monkeypatch):
     cur = _Cursor(fetchall_value=[("u1",), ("u2",), (None,)])
     conn = _Conn(cur)
@@ -69,6 +72,7 @@ def test_fetch_existing_urls(monkeypatch):
 
 
 @pytest.mark.db
+# test_get_db_connection_uses_database_url(monkeypatch)
 def test_get_db_connection_uses_database_url(monkeypatch):
     called = {"url": None}
 
@@ -85,6 +89,7 @@ def test_get_db_connection_uses_database_url(monkeypatch):
 
 
 @pytest.mark.db
+# test_merge_out_into_module2_out(tmp_path, monkeypatch)
 def test_merge_out_into_module2_out(tmp_path, monkeypatch):
     base_dir = tmp_path
     master = base_dir / "module_2_out.json"
@@ -102,6 +107,7 @@ def test_merge_out_into_module2_out(tmp_path, monkeypatch):
 
 
 @pytest.mark.db
+# test_merge_out_into_module2_out_skip_non_dict(tmp_path, monkeypatch)
 def test_merge_out_into_module2_out_skip_non_dict(tmp_path, monkeypatch):
     base_dir = tmp_path
     master = base_dir / "module_2_out.json"
@@ -118,6 +124,7 @@ def test_merge_out_into_module2_out_skip_non_dict(tmp_path, monkeypatch):
 
 
 @pytest.mark.web
+# test_home_status_message(monkeypatch)
 def test_home_status_message(monkeypatch):
     class DummyCursor:
         def __init__(self):
@@ -147,6 +154,7 @@ def test_home_status_message(monkeypatch):
 
 
 @pytest.mark.db
+# test_merge_out_into_module2_out_no_master(tmp_path, monkeypatch)
 def test_merge_out_into_module2_out_no_master(tmp_path, monkeypatch):
     base_dir = tmp_path
     batch = base_dir / "out.json"
@@ -160,6 +168,7 @@ def test_merge_out_into_module2_out_no_master(tmp_path, monkeypatch):
 
 
 @pytest.mark.db
+# test_ensure_initial_dataset_loaded_seeds(monkeypatch)
 def test_ensure_initial_dataset_loaded_seeds(monkeypatch):
     cur = _Cursor(fetchone_value=(0,))
     conn = _Conn(cur)
@@ -176,6 +185,7 @@ def test_ensure_initial_dataset_loaded_seeds(monkeypatch):
 
 
 @pytest.mark.db
+# test_ensure_initial_dataset_loaded_exception(monkeypatch)
 def test_ensure_initial_dataset_loaded_exception(monkeypatch):
     def fake_conn():
         raise Exception("db down")
@@ -193,6 +203,7 @@ def test_ensure_initial_dataset_loaded_exception(monkeypatch):
 
 
 @pytest.mark.db
+# test_create_connection_and_execute_query_error(monkeypatch)
 def test_create_connection_and_execute_query_error(monkeypatch):
     class FakeCursor:
         def execute(self, _):
@@ -215,6 +226,7 @@ def test_create_connection_and_execute_query_error(monkeypatch):
 
 
 @pytest.mark.db
+# test_create_connection_failure(monkeypatch)
 def test_create_connection_failure(monkeypatch):
     def fake_connect(**_):
         raise load_data.OperationalError("boom")
@@ -225,6 +237,7 @@ def test_create_connection_failure(monkeypatch):
 
 
 @pytest.mark.db
+# test_create_database_success(monkeypatch)
 def test_create_database_success(monkeypatch):
     class FakeCursor:
         def execute(self, _):
@@ -241,6 +254,7 @@ def test_create_database_success(monkeypatch):
 
 
 @pytest.mark.db
+# test_run_load_main(monkeypatch, tmp_path)
 def test_run_load_main(monkeypatch, tmp_path):
     import runpy
 

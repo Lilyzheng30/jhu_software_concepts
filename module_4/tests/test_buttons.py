@@ -1,3 +1,4 @@
+# Tests pull/update endpoints and busy-state behavior.
 import os
 import sys
 import pytest
@@ -15,6 +16,7 @@ def app_module():
 
 
 @pytest.mark.buttons
+# test_post_pull_data_triggers_pipeline(app_module, monkeypatch)
 def test_post_pull_data_triggers_pipeline(app_module, monkeypatch):
     called = {"ok": False}
 
@@ -31,6 +33,7 @@ def test_post_pull_data_triggers_pipeline(app_module, monkeypatch):
 
 
 @pytest.mark.buttons
+# test_post_update_analysis_not_busy(app_module)
 def test_post_update_analysis_not_busy(app_module):
     app_module.is_pulling = False
     client = app_module.app.test_client()
@@ -39,6 +42,7 @@ def test_post_update_analysis_not_busy(app_module):
 
 
 @pytest.mark.buttons
+# test_busy_gating_blocks_actions(app_module)
 def test_busy_gating_blocks_actions(app_module):
     app_module.is_pulling = True
     client = app_module.app.test_client()

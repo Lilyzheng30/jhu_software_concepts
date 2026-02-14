@@ -1,3 +1,4 @@
+# Tests Flask app creation and analysis page rendering.
 import os
 import sys
 import pytest
@@ -59,6 +60,7 @@ def app_module(monkeypatch):
 
 
 @pytest.mark.web
+# test_routes_exist(app_module)
 def test_routes_exist(app_module):
     routes = {rule.rule for rule in app_module.app.url_map.iter_rules()}
     assert "/" in routes
@@ -71,6 +73,7 @@ def test_routes_exist(app_module):
 
 
 @pytest.mark.web
+# test_create_app(app_module)
 def test_create_app(app_module):
     from flask import Flask
 
@@ -80,6 +83,7 @@ def test_create_app(app_module):
 
 
 @pytest.mark.web
+# test_get_home_page_renders(app_module)
 def test_get_home_page_renders(app_module):
     client = app_module.app.test_client()
     resp = client.get("/analysis")

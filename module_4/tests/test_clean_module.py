@@ -1,3 +1,4 @@
+# Tests cleaning logic and file I/O helpers.
 import os
 import sys
 import json
@@ -11,6 +12,7 @@ from module_2.clean import clean_data, load_data, save_data, run_clean
 
 
 @pytest.mark.db
+# test_clean_data_basic_fields()
 def test_clean_data_basic_fields():
     raw = [
         {
@@ -39,6 +41,7 @@ def test_clean_data_basic_fields():
 
 
 @pytest.mark.db
+# test_clean_data_normalizes_zero_values()
 def test_clean_data_normalizes_zero_values():
     raw = [
         {
@@ -56,6 +59,7 @@ def test_clean_data_normalizes_zero_values():
 
 
 @pytest.mark.db
+# test_clean_data_rejected_branch()
 def test_clean_data_rejected_branch():
     raw = [{"applicant_status_raw": "Rejected on Feb 02, 2025"}]
     cleaned = clean_data(raw)
@@ -63,6 +67,7 @@ def test_clean_data_rejected_branch():
 
 
 @pytest.mark.db
+# test_load_save_and_run_clean(tmp_path)
 def test_load_save_and_run_clean(tmp_path):
     inp = tmp_path / "in.json"
     outp = tmp_path / "out.json"
@@ -80,6 +85,7 @@ def test_load_save_and_run_clean(tmp_path):
 
 
 @pytest.mark.db
+# test_run_clean_main(monkeypatch, tmp_path)
 def test_run_clean_main(monkeypatch, tmp_path):
     import runpy
 

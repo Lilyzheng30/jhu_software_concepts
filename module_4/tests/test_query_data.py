@@ -1,3 +1,4 @@
+# Tests query helpers and main path behavior.
 import os
 import sys
 import pytest
@@ -31,6 +32,7 @@ class _FakeConn:
 
 
 @pytest.mark.db
+# test_execute_read_query_returns_rows()
 def test_execute_read_query_returns_rows():
     conn = _FakeConn(rows=[(5,)])
     rows = query_data.execute_read_query(conn, "SELECT 5;")
@@ -38,6 +40,7 @@ def test_execute_read_query_returns_rows():
 
 
 @pytest.mark.db
+# test_create_connection_failure(monkeypatch)
 def test_create_connection_failure(monkeypatch):
     def fake_connect(**_):
         raise query_data.OperationalError("boom")
@@ -48,6 +51,7 @@ def test_create_connection_failure(monkeypatch):
 
 
 @pytest.mark.db
+# test_execute_read_query_exception(monkeypatch)
 def test_execute_read_query_exception(monkeypatch):
     class BadCursor:
         def execute(self, _):
@@ -66,6 +70,7 @@ def test_execute_read_query_exception(monkeypatch):
 
 
 @pytest.mark.db
+# test_query_data_main_runs(monkeypatch, capsys)
 def test_query_data_main_runs(monkeypatch, capsys):
     import runpy
 
@@ -104,6 +109,7 @@ def test_query_data_main_runs(monkeypatch, capsys):
 
 
 @pytest.mark.db
+# test_first_value_none_path(monkeypatch)
 def test_first_value_none_path(monkeypatch):
     # Run __main__ and then call first_value with empty rows to hit line 132.
     import runpy

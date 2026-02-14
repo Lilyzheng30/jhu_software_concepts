@@ -1,3 +1,4 @@
+# Tests DB inserts, idempotency, and simple query shape.
 import os
 import sys
 import json
@@ -59,6 +60,7 @@ def temp_json(tmp_path):
 
 
 @pytest.mark.db
+# test_insert_and_idempotency(temp_json)
 def test_insert_and_idempotency(temp_json):
     from load_data import run_load
     import psycopg
@@ -94,6 +96,7 @@ def test_insert_and_idempotency(temp_json):
 
 
 @pytest.mark.db
+# test_simple_query_returns_expected_keys()
 def test_simple_query_returns_expected_keys():
     import psycopg
 
