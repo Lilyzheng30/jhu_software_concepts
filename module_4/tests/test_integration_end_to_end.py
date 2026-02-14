@@ -81,15 +81,15 @@ def test_end_to_end_flow(app_module, fake_rows, monkeypatch):
     client = app_module.app.test_client()
 
     # Pull data -> load DB
-    resp = client.post("/pull-data")
-    assert resp.status_code == 302
+    resp = client.post("/api/pull-data")
+    assert resp.status_code == 200
 
     # Update analysis
-    resp2 = client.post("/update-analysis")
-    assert resp2.status_code == 302
+    resp2 = client.post("/api/update-analysis")
+    assert resp2.status_code == 200
 
     # Render page should show analysis labels
-    resp3 = client.get("/")
+    resp3 = client.get("/analysis")
     assert resp3.status_code == 200
     text = resp3.get_data(as_text=True)
     assert "Answer:" in text
@@ -114,7 +114,7 @@ def test_multiple_pulls_are_idempotent(app_module, fake_rows, monkeypatch):
 
     client = app_module.app.test_client()
 
-    resp1 = client.post("/pull-data")
-    assert resp1.status_code == 302
-    resp2 = client.post("/pull-data")
-    assert resp2.status_code == 302
+    resp1 = client.post("/api/pull-data")
+    assert resp1.status_code == 200
+    resp2 = client.post("/api/pull-data")
+    assert resp2.status_code == 200

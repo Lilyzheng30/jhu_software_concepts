@@ -45,6 +45,12 @@ def test_handle_pull_data_redirects(monkeypatch):
         resp2 = app_module.handle_pull_data()
         assert resp2.status_code == 302
 
+    # ok + not seeded path
+    monkeypatch.setattr(app_module, "run_pull_data_pipeline", lambda: (True, "ok", False))
+    with app_module.app.test_request_context("/pull-data"):
+        resp3 = app_module.handle_pull_data()
+        assert resp3.status_code == 302
+
 
 @pytest.mark.buttons
 def test_pull_data_get_redirect():
@@ -62,6 +68,14 @@ def test_pull_data_silent_success(monkeypatch):
 
 
 @pytest.mark.buttons
+def test_pull_data_silent_busy(monkeypatch):
+    monkeypatch.setattr(app_module, "run_pull_data_pipeline", lambda: (False, "busy", False))
+    client = app_module.app.test_client()
+    resp = client.post("/pull-data-silent")
+    assert resp.status_code == 409
+
+
+@pytest.mark.buttons
 def test_update_analysis_get_redirect():
     client = app_module.app.test_client()
     resp = client.get("/update-analysis")
@@ -75,6 +89,30 @@ def test_handle_update_analysis_busy():
         resp = app_module.handle_update_analysis()
         assert resp.status_code == 302
     app_module.is_pulling = False
+
+
+@pytest.mark.buttons
+def test_handle_update_analysis_not_busy():
+    app_module.is_pulling = False
+    with app_module.app.test_request_context("/update-analysis"):
+        resp = app_module.handle_update_analysis()
+        assert resp.status_code == 302
+
+
+@pytest.mark.buttons
+def test_pull_data_post_calls_handler(monkeypatch):
+    monkeypatch.setattr(app_module, "handle_pull_data", lambda: ("ok", 302))
+    client = app_module.app.test_client()
+    resp = client.post("/pull-data")
+    assert resp.status_code == 302
+
+
+@pytest.mark.buttons
+def test_update_analysis_post_calls_handler(monkeypatch):
+    monkeypatch.setattr(app_module, "handle_update_analysis", lambda: ("ok", 302))
+    client = app_module.app.test_client()
+    resp = client.post("/update-analysis")
+    assert resp.status_code == 302
 
 
 @pytest.mark.buttons

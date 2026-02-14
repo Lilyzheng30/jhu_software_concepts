@@ -29,7 +29,6 @@ Equivalent DATABASE_URL for the current setup is:
 
 ``postgresql://postgres:abc123@127.0.0.1:5432/sm_app``
 
-If you add ``DATABASE_URL`` support later, document it here.
 
 Run Tests
 ---------

@@ -49,7 +49,7 @@ def app_module(monkeypatch):
 @pytest.mark.analysis
 def test_labels_and_percentage_format(app_module):
     client = app_module.app.test_client()
-    resp = client.get("/")
+    resp = client.get("/analysis")
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
 

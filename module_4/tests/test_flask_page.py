@@ -62,9 +62,12 @@ def app_module(monkeypatch):
 def test_routes_exist(app_module):
     routes = {rule.rule for rule in app_module.app.url_map.iter_rules()}
     assert "/" in routes
+    assert "/analysis" in routes
     assert "/pull-data" in routes
     assert "/pull-data-silent" in routes
     assert "/update-analysis" in routes
+    assert "/api/pull-data" in routes
+    assert "/api/update-analysis" in routes
 
 
 @pytest.mark.web
@@ -79,7 +82,7 @@ def test_create_app(app_module):
 @pytest.mark.web
 def test_get_home_page_renders(app_module):
     client = app_module.app.test_client()
-    resp = client.get("/")
+    resp = client.get("/analysis")
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
     assert "Pull Data" in text

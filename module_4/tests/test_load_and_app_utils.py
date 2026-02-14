@@ -69,6 +69,22 @@ def test_fetch_existing_urls(monkeypatch):
 
 
 @pytest.mark.db
+def test_get_db_connection_uses_database_url(monkeypatch):
+    called = {"url": None}
+
+    def fake_connect(arg):
+        called["url"] = arg
+        return "conn"
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h:5432/db")
+    monkeypatch.setattr(app.psycopg, "connect", fake_connect)
+
+    conn = app.get_db_connection()
+    assert conn == "conn"
+    assert called["url"] == "postgresql://u:p@h:5432/db"
+
+
+@pytest.mark.db
 def test_merge_out_into_module2_out(tmp_path, monkeypatch):
     base_dir = tmp_path
     master = base_dir / "module_2_out.json"

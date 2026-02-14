@@ -1,7 +1,7 @@
 import psycopg
 import json
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 from load_data import run_load
 from module_2.clean import run_clean
@@ -18,6 +18,9 @@ is_pulling = False
 
 # Open a DB connection for app reads/writes
 def get_db_connection():
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return psycopg.connect(db_url)
     return psycopg.connect(
         dbname="sm_app",
         user="postgres",
@@ -131,6 +134,7 @@ def merge_out_into_module2_out():
 
 
 @app.route("/")
+@app.route("/analysis")
 # Render analysis page from current DB metrics.
 def home():
     seeded_now = ensure_initial_dataset_loaded()
@@ -257,6 +261,21 @@ def update_analysis():
     if request.method == "GET":
         return redirect(url_for("home"))
     return handle_update_analysis()
+
+
+@app.route("/api/pull-data", methods=["POST"])
+def api_pull_data():
+    ok, status, _ = run_pull_data_pipeline()
+    if not ok:
+        return jsonify({"ok": False, "error": status, "busy": is_pulling}), 409
+    return jsonify({"ok": True, "status": status}), 200
+
+
+@app.route("/api/update-analysis", methods=["POST"])
+def api_update_analysis():
+    if is_pulling:
+        return jsonify({"ok": False, "busy": True}), 409
+    return jsonify({"ok": True}), 200
 
 
 if __name__ == "__main__":
