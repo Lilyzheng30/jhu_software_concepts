@@ -19,15 +19,9 @@ is_pulling = False
 # Open a DB connection for app reads/writes
 def get_db_connection():
     db_url = os.getenv("DATABASE_URL")
-    if db_url:
-        return psycopg.connect(db_url)
-    return psycopg.connect(
-        dbname="sm_app",
-        user="postgres",
-        password="abc123",
-        host="127.0.0.1",
-        port="5432",
-    )
+    if not db_url:
+        raise RuntimeError("DATABASE_URL is not set")
+    return psycopg.connect(db_url)
 
 
 # Run query and return first value

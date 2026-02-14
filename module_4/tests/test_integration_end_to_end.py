@@ -10,9 +10,13 @@ if SRC_PATH not in sys.path:
 
 
 @pytest.fixture
-def app_module():
+def app_module(monkeypatch):
     import app as app_module
 
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql://postgres:abc123@127.0.0.1:5432/sm_app",
+    )
     return app_module
 
 

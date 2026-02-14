@@ -67,13 +67,9 @@ def test_insert_and_idempotency(temp_json):
 
     run_load(input_file=temp_json)
 
-    conn = psycopg.connect(
-        dbname="sm_app",
-        user="postgres",
-        password="abc123",
-        host="127.0.0.1",
-        port="5432",
-    )
+    db_url = os.getenv("DATABASE_URL")
+    assert db_url is not None
+    conn = psycopg.connect(db_url)
     cur = conn.cursor()
 
     cur.execute("SELECT COUNT(*) FROM applicants WHERE url = 'https://example.com/a';")
@@ -100,13 +96,9 @@ def test_insert_and_idempotency(temp_json):
 def test_simple_query_returns_expected_keys():
     import psycopg
 
-    conn = psycopg.connect(
-        dbname="sm_app",
-        user="postgres",
-        password="abc123",
-        host="127.0.0.1",
-        port="5432",
-    )
+    db_url = os.getenv("DATABASE_URL")
+    assert db_url is not None
+    conn = psycopg.connect(db_url)
     cur = conn.cursor()
     cur.execute(
         "SELECT program, university, url, status, term, us_or_international FROM applicants LIMIT 1;"

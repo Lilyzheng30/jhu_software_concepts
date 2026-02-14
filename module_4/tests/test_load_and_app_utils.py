@@ -89,6 +89,14 @@ def test_get_db_connection_uses_database_url(monkeypatch):
 
 
 @pytest.mark.db
+# test_get_db_connection_missing_database_url(monkeypatch)
+def test_get_db_connection_missing_database_url(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(RuntimeError):
+        app.get_db_connection()
+
+
+@pytest.mark.db
 # test_merge_out_into_module2_out(tmp_path, monkeypatch)
 def test_merge_out_into_module2_out(tmp_path, monkeypatch):
     base_dir = tmp_path

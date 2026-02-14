@@ -34,7 +34,13 @@ File Overview (Module 4)
 
 How to Run Tests
 - From repo root:
+  export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
   pytest -c module_4/pytest.ini -m "web or buttons or analysis or db or integration"
+
+How to Run the App
+- From module_4/src:
+  export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
+  python app.py
 
 Sphinx Docs
 - Build HTML from module_4/docs:

@@ -14,6 +14,7 @@ From ``module_4/src``:
 
 .. code-block:: bash
 
+   export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
    python app.py
 
 By default it connects to PostgreSQL at ``127.0.0.1:5432`` with database
@@ -37,4 +38,5 @@ From the repo root:
 
 .. code-block:: bash
 
+   export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
    pytest -c module_4/pytest.ini -m "web or buttons or analysis or db or integration"
