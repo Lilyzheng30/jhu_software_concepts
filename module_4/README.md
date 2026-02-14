@@ -28,7 +28,8 @@ File Overview (Module 4)
   - docs/build/html/: generated HTML output from `make html`
 - src/: module_3 files
 - build/html/: html files for the document page with each page having a different html file 
-- .readthedocs.yaml (repo root): Read the Docs build configuration (Python version, Sphinx conf path, and requirements to install).
+- .github/workflows/tests.yml (repo root): GitHub Actions workflow (must be at repo root to run).
+- .readthedocs.yaml (repo root): Read the Docs build configuration (must be at repo root to run).
 
 
 How to Run Tests
