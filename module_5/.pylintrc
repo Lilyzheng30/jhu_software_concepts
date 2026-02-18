@@ -1,0 +1,5 @@
+[MASTER]
+ignore-paths=.*__pycache__/.*
+
+[TYPECHECK]
+ignored-modules=flask,psycopg,pytest,huggingface_hub,llama_cpp,bs4
