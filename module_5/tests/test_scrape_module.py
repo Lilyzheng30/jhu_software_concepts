@@ -52,6 +52,12 @@ def test_parse_row_short_row():
 
 
 @pytest.mark.db
+def test_extract_semester_no_match():
+    from module_2 import scrape as scrape_mod
+    assert scrape_mod._extract_semester("No semester provided") is None
+
+
+@pytest.mark.db
 # test_parse_detail_page(monkeypatch)
 def test_parse_detail_page(monkeypatch):
     html = """

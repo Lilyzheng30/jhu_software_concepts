@@ -211,6 +211,35 @@ def test_ensure_initial_dataset_loaded_exception(monkeypatch):
 
 
 @pytest.mark.db
+# test_ensure_initial_dataset_loaded_cursor_error(monkeypatch)
+def test_ensure_initial_dataset_loaded_cursor_error(monkeypatch):
+    class BadCursor:
+        def execute(self, _):
+            raise RuntimeError("cursor fail")
+        def fetchone(self):
+            return (1,)
+        def close(self):
+            return None
+
+    class BadConn:
+        def cursor(self):
+            return BadCursor()
+        def close(self):
+            return None
+
+    monkeypatch.setattr(app, "get_db_connection", lambda: BadConn())
+    called = {"ok": False}
+
+    def fake_run_load(**_):
+        called["ok"] = True
+
+    monkeypatch.setattr(app, "run_load", fake_run_load)
+    seeded = app.ensure_initial_dataset_loaded()
+    assert seeded is True
+    assert called["ok"] is True
+
+
+@pytest.mark.db
 # test_create_connection_and_execute_query_error(monkeypatch)
 def test_create_connection_and_execute_query_error(monkeypatch):
     class FakeCursor:

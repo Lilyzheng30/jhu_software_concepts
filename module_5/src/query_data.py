@@ -1,8 +1,9 @@
 """SQL query definitions and simple database read helpers."""
 
-from psycopg import OperationalError
+import load_data as _load_data
 
-from load_data import create_connection
+psycopg = _load_data.psycopg
+OperationalError = _load_data.OperationalError
 
 QUERIES = {
     "q1": """
@@ -93,8 +94,15 @@ QUERIES = {
 }
 
 
+def create_connection(db_name, db_user, db_password, db_host, db_port):
+    """Create a PostgreSQL connection for query reads."""
+    return _load_data.create_connection(db_name, db_user, db_password, db_host, db_port)
+
+
 def execute_read_query(db_conn, query):
     """Execute a SELECT query and return all rows or None on error."""
+    if db_conn is None:
+        return None
     db_conn.autocommit = True
     cursor = db_conn.cursor()
     try:
@@ -109,39 +117,36 @@ if __name__ == "__main__":
     connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
 
     # for the console question output
-    def first_value(db_conn, sql_query):
+    def first_value(sql_query, db_conn=None):
         """Return the first scalar value for a query."""
-        rows = execute_read_query(db_conn, sql_query)
+        conn_for_query = connection if db_conn is None else db_conn
+        rows = execute_read_query(conn_for_query, sql_query)
         if not rows:
             return None
         return rows[0][0]
 
-    applicant_count = first_value(connection, QUERIES["q1"])
+    applicant_count = first_value(QUERIES["q1"])
     international_count = first_value(
-        connection,
         "SELECT COUNT(*) FROM applicants WHERE us_or_international NOT IN ('American', 'Other');"
     )
     us_count = first_value(
-        connection,
         "SELECT COUNT(*) FROM applicants WHERE us_or_international = 'American';"
     )
     other_count = first_value(
-        connection,
         "SELECT COUNT(*) FROM applicants WHERE us_or_international = 'Other';"
     )
-    percent_international = first_value(connection, QUERIES["q2"])
+    percent_international = first_value(QUERIES["q2"])
 
     q3_rows = execute_read_query(connection, QUERIES["q3"])
     q3 = q3_rows[0] if q3_rows else (None, None, None, None)
 
-    avg_gpa_american = first_value(connection, QUERIES["q4"])
-    acceptance_percent = first_value(connection, QUERIES["q5"])
+    avg_gpa_american = first_value(QUERIES["q4"])
+    acceptance_percent = first_value(QUERIES["q5"])
     acceptance_count = first_value(
-        connection,
         "SELECT COUNT(*) FROM applicants WHERE term = 'Fall 2026' AND status ILIKE 'Accepted on%';"
     )
-    avg_gpa_acceptance = first_value(connection, QUERIES["q6"])
-    jhu_masters_cs_count = first_value(connection, QUERIES["q7"])
+    avg_gpa_acceptance = first_value(QUERIES["q6"])
+    jhu_masters_cs_count = first_value(QUERIES["q7"])
 
     print(f"Applicant count: {applicant_count}")
     print(f"International count: {international_count}")
@@ -158,4 +163,5 @@ if __name__ == "__main__":
     print(f"Average GPA Acceptance: {avg_gpa_acceptance}")
     print(f"JHU Masters Computer Science count: {jhu_masters_cs_count}")
 
-    connection.close()
+    if connection is not None:
+        connection.close()

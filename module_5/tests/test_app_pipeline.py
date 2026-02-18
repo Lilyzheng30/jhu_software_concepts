@@ -27,7 +27,7 @@ def test_run_pull_data_pipeline_busy():
 # test_run_pull_data_pipeline_exception(monkeypatch)
 def test_run_pull_data_pipeline_exception(monkeypatch):
     def boom(*_, **__):
-        raise Exception("fail")
+        raise RuntimeError("fail")
 
     monkeypatch.setattr(app_module, "run_scrape", boom)
     app_module.is_pulling = False

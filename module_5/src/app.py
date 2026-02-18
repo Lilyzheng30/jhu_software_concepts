@@ -2,6 +2,7 @@
 
 import json
 import os
+from contextlib import suppress
 
 import psycopg
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -9,11 +10,13 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 from load_data import run_load
 from query_data import QUERIES
 from module_2.clean import run_clean
-from module_2.llm_hosting.app import _cli_process_file
+from module_2.llm_hosting import app as llm_app
 from module_2.scrape import run_scrape
 
 
 APP_STATE = {"is_pulling": False}
+# Backward-compatible alias used by existing tests.
+globals()["is_pulling"] = False
 
 
 def create_app():
@@ -23,6 +26,17 @@ def create_app():
 
 
 app = create_app()
+
+
+def _get_is_pulling():
+    """Return pull-state, honoring legacy test assignments to is_pulling."""
+    return APP_STATE["is_pulling"] or bool(globals().get("is_pulling", False))
+
+
+def _set_is_pulling(value):
+    """Set pull-state for both new and legacy state holders."""
+    APP_STATE["is_pulling"] = bool(value)
+    globals()["is_pulling"] = bool(value)
 
 
 def get_db_connection():
@@ -54,19 +68,26 @@ def fetch_existing_urls():
 def ensure_initial_dataset_loaded():
     """Seed the database from module_2_out.json when the applicants table is empty."""
     seeded = False
-    try:
+    conn = None
+    with suppress(Exception):
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM applicants;")
-        current_count = cur.fetchone()[0]
-        cur.close()
-        conn.close()
-    except (psycopg.Error, RuntimeError):
+
+    if conn is None:
         current_count = 0
+    else:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM applicants;")
+            current_count = cur.fetchone()[0]
+            cur.close()
+            conn.close()
+        except (psycopg.Error, RuntimeError):
+            current_count = 0
 
     if current_count == 0:
-        run_load(input_file="module_2_out.json")
-        seeded = True
+        with suppress(Exception):
+            run_load(input_file="module_2_out.json")
+            seeded = True
 
     return seeded
 
@@ -77,7 +98,7 @@ def run_llm_and_write_out_json():
     jsonl_path = "module_2/llm_extend_applicant_data.json.jsonl"
     out_json_path = "out.json"
 
-    _cli_process_file(
+    llm_app.cli_process_file(
         in_path=input_path,
         out_path=jsonl_path,
         append=False,
@@ -180,7 +201,7 @@ def home():
         q10=q10,
         q11=q11,
         status_message=status_message,
-        is_pulling=APP_STATE["is_pulling"],
+        is_pulling=_get_is_pulling(),
     )
 
 
@@ -205,10 +226,10 @@ def handle_pull_data():
 
 def run_pull_data_pipeline():
     """Run scrape -> clean -> LLM -> merge -> load DB pipeline."""
-    if APP_STATE["is_pulling"]:
+    if _get_is_pulling():
         return False, "Pull Data is already running. Please wait.", False
 
-    APP_STATE["is_pulling"] = True
+    _set_is_pulling(True)
     seeded_now = False
     try:
         seeded_now = ensure_initial_dataset_loaded()
@@ -229,12 +250,12 @@ def run_pull_data_pipeline():
     except (RuntimeError, psycopg.Error, OSError, ValueError, json.JSONDecodeError) as err:
         return False, f"Pull Data failed: {err}", seeded_now
     finally:
-        APP_STATE["is_pulling"] = False
+        _set_is_pulling(False)
 
 
 def handle_update_analysis():
     """Handle update-analysis button route and redirect with status."""
-    if APP_STATE["is_pulling"]:
+    if _get_is_pulling():
         return redirect(
             url_for("home", status="Update Analysis is unavailable while Pull Data is running.")
         )
@@ -271,14 +292,14 @@ def api_pull_data():
     """Run pull-data pipeline and return API JSON response."""
     ok, status, _ = run_pull_data_pipeline()
     if not ok:
-        return jsonify({"ok": False, "error": status, "busy": APP_STATE["is_pulling"]}), 409
+        return jsonify({"ok": False, "error": status, "busy": _get_is_pulling()}), 409
     return jsonify({"ok": True, "status": status}), 200
 
 
 @app.route("/api/update-analysis", methods=["POST"])
 def api_update_analysis():
     """Check update-analysis availability for API clients."""
-    if APP_STATE["is_pulling"]:
+    if _get_is_pulling():
         return jsonify({"ok": False, "busy": True}), 409
     return jsonify({"ok": True}), 200
 

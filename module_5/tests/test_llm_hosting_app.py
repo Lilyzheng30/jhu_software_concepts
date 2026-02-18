@@ -134,6 +134,18 @@ def test_cli_process_file(monkeypatch, tmp_path):
 
 
 @pytest.mark.db
+def test_cli_process_file_stdout(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(llm_app, "_load_llm", lambda: _FakeLLM())
+
+    inp = tmp_path / "in.json"
+    inp.write_text(json.dumps([{"program": "CS", "university": "Test University"}]))
+
+    llm_app._cli_process_file(str(inp), None, append=False, to_stdout=True)
+    captured = capsys.readouterr().out.strip()
+    assert captured
+
+
+@pytest.mark.db
 def test_best_match_and_load_llm(monkeypatch):
     llm_app._LLM = None
     monkeypatch.setattr(llm_app, "hf_hub_download", lambda **_: "models/fake.gguf")

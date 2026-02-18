@@ -35,7 +35,8 @@ File Overview (Module 4)
 How to Run Tests
 - From repo root:
   export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
-  pytest -c module_4/pytest.ini -m "web or buttons or analysis or db or integration"
+  pytest -c module_5/pytest.ini module_5/tests -m "web or buttons or analysis or db or integration" --cov=module_5/src
+
 
 How to Run the App
 - From module_4/src:
@@ -51,7 +52,16 @@ Sphinx Docs
 Pylint (Module 5)
 - Install Pylint:
    python3 -m pip install pylint
-- Run Pylint on all Python files in `module_5`:
-  `PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc $(rg --files module_5 -g '*.py')`
+- Run Pylint on all Python files in module_5:
+  PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc $(find module_5 -type f -name "*.py")
+
 - Latest result:
   
+
+
+  PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc \
+$(find module_5 -type f -name "*.py" \
+  -not -path "module_5/venv/*" \
+  -not -path "module_5/docs/build/*" \
+  -not -path "*/__pycache__/*")
+

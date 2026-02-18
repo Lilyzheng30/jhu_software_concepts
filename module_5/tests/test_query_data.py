@@ -40,6 +40,11 @@ def test_execute_read_query_returns_rows():
 
 
 @pytest.mark.db
+def test_execute_read_query_none_connection():
+    assert query_data.execute_read_query(None, "SELECT 1;") is None
+
+
+@pytest.mark.db
 # test_create_connection_failure(monkeypatch)
 def test_create_connection_failure(monkeypatch):
     def fake_connect(**_):

@@ -1,6 +1,7 @@
 """Scrape GradCafe survey pages and extract application records."""
 
 import json
+from contextlib import suppress
 from urllib import request
 
 from bs4 import BeautifulSoup
@@ -10,8 +11,11 @@ def _fetch_html(url):
     """Fetch and decode HTML for a URL with a browser-like user agent."""
     req = request.Request(url)
     req.add_header("User-Agent", "Mozilla/5.0")
-    with request.urlopen(req) as page:
-        return page.read().decode("utf-8")
+    page = request.urlopen(req)
+    if hasattr(page, "__enter__") and hasattr(page, "__exit__"):
+        with page as opened:
+            return opened.read().decode("utf-8")
+    return page.read().decode("utf-8")
 
 
 def _has_meta_info(row_text):
@@ -136,10 +140,11 @@ def scrape_data(existing_urls=None, stop_after_existing=100):
 
     for page_num in range(1, 100):
         full_url = f"{base_url}?page={page_num}"
-        try:
+        html = None
+        with suppress(Exception):
             html = _fetch_html(full_url)
-        except (OSError, UnicodeDecodeError) as err:
-            print("Page fetch failed:", page_num, err)
+        if html is None:
+            print("Page fetch failed:", page_num)
             continue
 
         soup = BeautifulSoup(html, "html.parser")
@@ -202,9 +207,11 @@ def parse_row(main_row, meta_row):
 
 def parse_detail_page(url):
     """Fetch and parse a detail page to augment listing-row fields."""
-    try:
+    html = None
+    with suppress(Exception):
         html = _fetch_html(url)
-    except (OSError, UnicodeDecodeError):
+
+    if html is None:
         return {}
 
     soup = BeautifulSoup(html, "html.parser")

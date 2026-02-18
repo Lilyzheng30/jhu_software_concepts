@@ -339,6 +339,11 @@ def _cli_process_file(in_path: str, out_path: str | None, append: bool, to_stdou
         _write_rows_as_jsonl(rows, file_out)
 
 
+def cli_process_file(in_path: str, out_path: str | None, append: bool, to_stdout: bool) -> None:
+    """Public wrapper for CLI file processing."""
+    _cli_process_file(in_path, out_path, append, to_stdout)
+
+
 if __name__ == "__main__":
     import argparse
 
