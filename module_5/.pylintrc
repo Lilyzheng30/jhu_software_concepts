@@ -3,6 +3,8 @@ ignore-paths=
     .*/venv/.*
     .*/__pycache__/.*
     .*/docs/build/.*
+    .*/tests/.*
+    .*/docs/source/conf\.py$
 
 
 [TYPECHECK]

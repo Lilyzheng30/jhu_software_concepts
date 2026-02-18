@@ -1,36 +1,22 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
-project = 'Grad Cafe Analytics'
-copyright = '2026, Lily Zheng'
-author = 'Lily Zheng'
-release = '1.0'
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+"""Sphinx configuration for module_5 documentation."""
 
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../../src"))
 
-extensions = [
+# Sphinx expects these exact lowercase names in conf.py.
+globals()["project"] = "Grad Cafe Analytics"
+globals()["copyright"] = "2026, Lily Zheng"
+globals()["author"] = "Lily Zheng"
+globals()["release"] = "1.0"
+
+globals()["extensions"] = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
 ]
 
-templates_path = ['_templates']
-exclude_patterns = []
-
-
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+globals()["templates_path"] = ["_templates"]
+globals()["exclude_patterns"] = []
+globals()["html_theme"] = "sphinx_rtd_theme"
+globals()["html_static_path"] = ["_static"]

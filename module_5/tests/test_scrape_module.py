@@ -1,28 +1,42 @@
-# Tests scrape parsing and edge cases with mocked HTML.
+"""Tests scrape parsing and edge-case behavior with mocked HTML/network calls."""
+
+import importlib
 import os
+import runpy
 import sys
+
+from bs4 import BeautifulSoup
 import pytest
 
 SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
-from module_2.scrape import parse_row, parse_detail_page, scrape_data
+scrape_mod = importlib.import_module("module_2.scrape")
+parse_row = scrape_mod.parse_row
+parse_detail_page = scrape_mod.parse_detail_page
+scrape_data = scrape_mod.scrape_data
 
 
 class _FakeResp:
+    """Simple response wrapper exposing .read() bytes for urlopen mocks."""
+
     def __init__(self, html):
+        """Store HTML text that will be returned on read()."""
         self._html = html
 
     def read(self):
+        """Return HTML as UTF-8 bytes."""
         return self._html.encode("utf-8")
+
+    def close(self):
+        """Provide a no-op close method for API compatibility."""
+        return None
 
 
 @pytest.mark.db
-# test_parse_row_and_meta()
 def test_parse_row_and_meta():
-    from bs4 import BeautifulSoup
-
+    """parse_row extracts detail URL and semester metadata from adjacent rows."""
     html = """
     <table>
       <tr><th>Program</th><th>University</th><th>Date</th><th>Decision</th></tr>
@@ -42,24 +56,22 @@ def test_parse_row_and_meta():
 
 
 @pytest.mark.db
-# test_parse_row_short_row()
 def test_parse_row_short_row():
-    from bs4 import BeautifulSoup
-
-    html = "<tr><td>Only</td></tr>"
-    row = BeautifulSoup(html, "html.parser").find("tr")
+    """parse_row returns None for malformed table rows."""
+    row = BeautifulSoup("<tr><td>Only</td></tr>", "html.parser").find("tr")
     assert parse_row(row, None) is None
 
 
 @pytest.mark.db
 def test_extract_semester_no_match():
-    from module_2 import scrape as scrape_mod
-    assert scrape_mod._extract_semester("No semester provided") is None
+    """_extract_semester returns None when term text is missing."""
+    extract_fn = getattr(scrape_mod, "_extract_semester")
+    assert extract_fn("No semester provided") is None
 
 
 @pytest.mark.db
-# test_parse_detail_page(monkeypatch)
 def test_parse_detail_page(monkeypatch):
+    """parse_detail_page parses GPA/program/degree/comments/GRE fields."""
     html = """
     <main>
       <dl>
@@ -77,10 +89,10 @@ def test_parse_detail_page(monkeypatch):
     </main>
     """
 
-    def fake_urlopen(req):
+    def _fake_urlopen(_request_obj):
         return _FakeResp(html)
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
 
     data = parse_detail_page("https://example.com")
     assert data["gpa_raw"] == "3.9"
@@ -94,37 +106,39 @@ def test_parse_detail_page(monkeypatch):
 
 
 @pytest.mark.db
-# test_parse_detail_page_missing_sections(monkeypatch)
 def test_parse_detail_page_missing_sections(monkeypatch):
-    def fake_urlopen(req):
+    """parse_detail_page returns empty dict when expected sections are absent."""
+
+    def _fake_urlopen_missing_main(_request_obj):
         return _FakeResp("<html><body>No main here</body></html>")
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen_missing_main)
     data = parse_detail_page("https://example.com/missing")
-    assert data == {}
+    assert not data
 
-    def fake_urlopen2(req):
+    def _fake_urlopen_missing_dl(_request_obj):
         return _FakeResp("<main><p>No dl here</p></main>")
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen2)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen_missing_dl)
     data2 = parse_detail_page("https://example.com/missing2")
-    assert data2 == {}
+    assert not data2
 
 
 @pytest.mark.db
-# test_parse_detail_page_exception(monkeypatch)
 def test_parse_detail_page_exception(monkeypatch):
-    def fake_urlopen(req):
-        raise Exception("boom")
+    """parse_detail_page returns empty dict on request exceptions."""
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    def _fake_urlopen(_request_obj):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
     data = parse_detail_page("https://example.com/error")
-    assert data == {}
+    assert not data
 
 
 @pytest.mark.db
-# test_scrape_data_collects_entries(monkeypatch)
 def test_scrape_data_collects_entries(monkeypatch):
+    """scrape_data collects rows and merges detail-page fields."""
     list_html = """
     <table>
       <tr><th>Program</th><th>University</th><th>Date</th><th>Decision</th></tr>
@@ -143,13 +157,13 @@ def test_scrape_data_collects_entries(monkeypatch):
 
     calls = {"n": 0}
 
-    def fake_urlopen(req):
+    def _fake_urlopen(_request_obj):
         calls["n"] += 1
         if calls["n"] == 1:
             return _FakeResp(list_html)
         return _FakeResp(detail_html)
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
 
     entries = scrape_data(existing_urls=set(), stop_after_existing=1)
     assert len(entries) == 1
@@ -158,33 +172,32 @@ def test_scrape_data_collects_entries(monkeypatch):
 
 
 @pytest.mark.db
-# test_scrape_data_breaks_on_no_rows(monkeypatch)
 def test_scrape_data_breaks_on_no_rows(monkeypatch):
-    html = "<table><tr><th>Header</th></tr></table>"
+    """scrape_data returns no entries when listing table has no data rows."""
 
-    def fake_urlopen(req):
-        return _FakeResp(html)
+    def _fake_urlopen(_request_obj):
+        return _FakeResp("<table><tr><th>Header</th></tr></table>")
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
     entries = scrape_data(existing_urls=set(), stop_after_existing=1)
-    assert entries == []
+    assert not entries
 
 
 @pytest.mark.db
-# test_scrape_data_handles_fetch_error(monkeypatch)
 def test_scrape_data_handles_fetch_error(monkeypatch):
-    def fake_urlopen(req):
-        raise Exception("boom")
+    """scrape_data returns no entries when list page fetch fails."""
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    def _fake_urlopen(_request_obj):
+        raise RuntimeError("boom")
 
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
     entries = scrape_data(existing_urls=set(), stop_after_existing=1)
-    assert entries == []
+    assert not entries
 
 
 @pytest.mark.db
-# test_scrape_data_stops_on_existing(monkeypatch)
 def test_scrape_data_stops_on_existing(monkeypatch):
+    """scrape_data stops when first listing URL is already known."""
     list_html = """
     <table>
       <tr><th>Program</th><th>University</th><th>Date</th><th>Decision</th></tr>
@@ -195,43 +208,52 @@ def test_scrape_data_stops_on_existing(monkeypatch):
     </table>
     """
 
-    def fake_urlopen(req):
+    def _fake_urlopen(_request_obj):
         return _FakeResp(list_html)
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
-
-    entries = scrape_data(existing_urls={"https://www.thegradcafe.com/survey/123"}, stop_after_existing=1)
-    assert entries == []
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
+    entries = scrape_data(
+        existing_urls={"https://www.thegradcafe.com/survey/123"},
+        stop_after_existing=1,
+    )
+    assert not entries
 
 
 @pytest.mark.db
-# test_save_data_and_run_scrape(monkeypatch, tmp_path)
 def test_save_data_and_run_scrape(monkeypatch, tmp_path):
-    from module_2 import scrape as scrape_mod
+    """run_scrape calls scrape_data and save_data with expected values."""
 
-    monkeypatch.setattr(scrape_mod, "scrape_data", lambda **_: [{"url": "u1"}])
-    monkeypatch.setattr(scrape_mod, "save_data", lambda *_, **__: None)
+    def _fake_scrape_data(**_kwargs):
+        return [{"url": "u1"}]
 
-    out = tmp_path / "out.json"
-    entries = scrape_mod.run_scrape(existing_urls=set(), filename=str(out))
+    def _fake_save_data(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(scrape_mod, "scrape_data", _fake_scrape_data)
+    monkeypatch.setattr(scrape_mod, "save_data", _fake_save_data)
+
+    out_path = tmp_path / "out.json"
+    entries = scrape_mod.run_scrape(existing_urls=set(), filename=str(out_path))
     assert entries == [{"url": "u1"}]
 
 
 @pytest.mark.db
-# test_scrape_main(monkeypatch)
-def test_scrape_main(monkeypatch):
-    import runpy
+def test_scrape_main():
+    """module_2.scrape __main__ executes safely with injected run_scrape."""
+
+    def _fake_run_scrape(**_kwargs):
+        return []
 
     runpy.run_module(
         "module_2.scrape",
         run_name="__main__",
-        init_globals={"run_scrape": lambda **_: []},
+        init_globals={"run_scrape": _fake_run_scrape},
     )
 
 
 @pytest.mark.db
-# test_existing_continue_branch(monkeypatch)
 def test_existing_continue_branch(monkeypatch):
+    """When stop_after_existing > 1, existing URL path still continues correctly."""
     list_html = """
     <table>
       <tr><th>Program</th><th>University</th><th>Date</th><th>Decision</th></tr>
@@ -242,18 +264,20 @@ def test_existing_continue_branch(monkeypatch):
     </table>
     """
 
-    def fake_urlopen(req):
+    def _fake_urlopen(_request_obj):
         return _FakeResp(list_html)
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
-    # stop_after_existing=2 ensures it hits the continue branch (59-60) before returning
-    entries = scrape_data(existing_urls={"https://www.thegradcafe.com/survey/123"}, stop_after_existing=2)
-    assert entries == []
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
+    entries = scrape_data(
+        existing_urls={"https://www.thegradcafe.com/survey/123"},
+        stop_after_existing=2,
+    )
+    assert not entries
 
 
 @pytest.mark.db
-# test_parse_detail_page_short_spans(monkeypatch)
 def test_parse_detail_page_short_spans(monkeypatch):
+    """parse_detail_page handles malformed span rows safely."""
     html = """
     <main>
       <dl>
@@ -264,9 +288,9 @@ def test_parse_detail_page_short_spans(monkeypatch):
     </main>
     """
 
-    def fake_urlopen(req):
+    def _fake_urlopen(_request_obj):
         return _FakeResp(html)
 
-    monkeypatch.setattr("module_2.scrape.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("module_2.scrape.request.urlopen", _fake_urlopen)
     data = parse_detail_page("https://example.com/short")
-    assert data == {}
+    assert not data

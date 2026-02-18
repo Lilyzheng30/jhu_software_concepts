@@ -1,74 +1,49 @@
-# Tests DB inserts, idempotency, and simple query shape.
+"""Tests DB insert idempotency and row-shape query checks."""
+
+import importlib
+import json
 import os
 import sys
-import json
+
 import pytest
 
 SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
+build_applicant_rows = importlib.import_module("data_builders").build_applicant_rows
+
+app_fixture_module = importlib.import_module("app")
 
 
 @pytest.fixture
-def app_module():
-    import app as app_module
+def app_fixture():
+    """Return imported app module used by integration tests."""
+    return app_fixture_module
 
-    return app_module
 
-
-@pytest.fixture
-def temp_json(tmp_path):
-    rows = [
-        {
-            "program": "Computer Science",
-            "university": "Johns Hopkins University",
-            "comments": "Test",
-            "date_added": "2025-01-01",
-            "url": "https://example.com/a",
-            "applicant_status": "Accepted on Jan 01, 2025",
-            "semester_year_start": "Fall 2026",
-            "citizenship": "International",
-            "gpa": "3.9",
-            "gre_total": "330",
-            "gre_verbal": "165",
-            "gre_writing": "4.5",
-            "degree_type": "Masters",
-            "llm-generated-program": "Computer Science",
-            "llm-generated-university": "Johns Hopkins University",
-        },
-        {
-            "program": "Computer Science",
-            "university": "Johns Hopkins University",
-            "comments": "Duplicate",
-            "date_added": "2025-01-02",
-            "url": "https://example.com/a",
-            "applicant_status": "Accepted on Jan 02, 2025",
-            "semester_year_start": "Fall 2026",
-            "citizenship": "International",
-            "gpa": "3.8",
-            "gre_total": "329",
-            "gre_verbal": "164",
-            "gre_writing": "4.0",
-            "degree_type": "Masters",
-            "llm-generated-program": "Computer Science",
-            "llm-generated-university": "Johns Hopkins University",
-        },
-    ]
-    p = tmp_path / "rows.json"
-    p.write_text(json.dumps(rows))
-    return str(p)
+@pytest.fixture(name="temp_json")
+def fixture_temp_json(tmp_path):
+    """Write a temp JSON file with duplicate URL rows."""
+    rows = build_applicant_rows()
+    rows[1]["url"] = rows[0]["url"]
+    rows[1]["comments"] = "Duplicate"
+    rows[1]["university"] = rows[0]["university"]
+    path_obj = tmp_path / "rows.json"
+    path_obj.write_text(json.dumps(rows))
+    return str(path_obj)
 
 
 @pytest.mark.db
-# test_insert_and_idempotency(temp_json)
 def test_insert_and_idempotency(temp_json):
-    from load_data import run_load
-    import psycopg
+    """run_load inserts one row per URL despite duplicates in JSON."""
+    run_load = importlib.import_module("load_data").run_load
+    psycopg = importlib.import_module("psycopg")
 
     run_load(input_file=temp_json)
 
     db_url = os.getenv("DATABASE_URL")
     assert db_url is not None
+
     conn = psycopg.connect(db_url)
     cur = conn.cursor()
 
@@ -77,7 +52,8 @@ def test_insert_and_idempotency(temp_json):
     assert count == 1
 
     cur.execute(
-        "SELECT program, university, url, status, term, us_or_international FROM applicants WHERE url = 'https://example.com/a';"
+        "SELECT program, university, url, status, term, us_or_international "
+        "FROM applicants WHERE url = 'https://example.com/a';"
     )
     row = cur.fetchone()
     assert row[0] is not None
@@ -92,19 +68,22 @@ def test_insert_and_idempotency(temp_json):
 
 
 @pytest.mark.db
-# test_simple_query_returns_expected_keys()
 def test_simple_query_returns_expected_keys():
-    import psycopg
+    """Simple SELECT query returns values mappable to expected keys."""
+    psycopg = importlib.import_module("psycopg")
 
     db_url = os.getenv("DATABASE_URL")
     assert db_url is not None
+
     conn = psycopg.connect(db_url)
     cur = conn.cursor()
     cur.execute(
-        "SELECT program, university, url, status, term, us_or_international FROM applicants LIMIT 1;"
+        "SELECT program, university, url, status, term, us_or_international "
+        "FROM applicants LIMIT 1;"
     )
     row = cur.fetchone()
     assert row is not None
+
     keys = ["program", "university", "url", "status", "term", "us_or_international"]
     data = dict(zip(keys, row))
     assert set(keys).issubset(data.keys())

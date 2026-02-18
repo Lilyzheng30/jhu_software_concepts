@@ -1,14 +1,22 @@
-# Tests Flask app creation and analysis page rendering.
+"""Tests Flask app creation and analysis page rendering."""
+
 import os
 import sys
+import importlib
+
 import pytest
+from flask import Flask
 
 SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
+app_mod = importlib.import_module("app")
+
 
 class FakeCursor:
+    """Minimal cursor fake for deterministic query outputs."""
+
     def __init__(self):
         self.queries = []
         self.fetchone_values = [
@@ -26,9 +34,11 @@ class FakeCursor:
         self.q3_row = (0.0, 0.0, 0.0, 0.0)
 
     def execute(self, query):
+        """Record executed query text."""
         self.queries.append(query)
 
     def fetchone(self):
+        """Return deterministic rows that mirror app query order."""
         if "AVG(gpa)::numeric" in self.queries[-1]:
             return self.q3_row
         if self.fetchone_values:
@@ -36,33 +46,47 @@ class FakeCursor:
         return None
 
     def close(self):
+        """No-op close to mimic DB cursor API."""
         return None
 
 
 class FakeConnection:
+    """Minimal connection fake returning the cursor stub."""
+
     def __init__(self):
         self.cursor_obj = FakeCursor()
 
     def cursor(self):
+        """Return cursor fake."""
         return self.cursor_obj
 
     def close(self):
+        """No-op close to mimic DB connection API."""
         return None
 
 
-@pytest.fixture
-def app_module(monkeypatch):
-    import app as app_module
+@pytest.fixture(name="app_fixture")
+def fixture_app(monkeypatch):
+    """Return app module with DB dependencies patched out."""
+    def fake_get_db_connection():
+        return FakeConnection()
 
-    monkeypatch.setattr(app_module, "get_db_connection", lambda: FakeConnection())
-    monkeypatch.setattr(app_module, "ensure_initial_dataset_loaded", lambda: False)
-    return app_module
+    def fake_ensure_initial_dataset_loaded():
+        return False
+
+    monkeypatch.setattr(app_mod, "get_db_connection", fake_get_db_connection)
+    monkeypatch.setattr(
+        app_mod,
+        "ensure_initial_dataset_loaded",
+        fake_ensure_initial_dataset_loaded,
+    )
+    return app_mod
 
 
 @pytest.mark.web
-# test_routes_exist(app_module)
-def test_routes_exist(app_module):
-    routes = {rule.rule for rule in app_module.app.url_map.iter_rules()}
+def test_routes_exist(app_fixture):
+    """All expected app routes are registered."""
+    routes = {rule.rule for rule in app_fixture.app.url_map.iter_rules()}
     assert "/" in routes
     assert "/analysis" in routes
     assert "/pull-data" in routes
@@ -73,19 +97,17 @@ def test_routes_exist(app_module):
 
 
 @pytest.mark.web
-# test_create_app(app_module)
-def test_create_app(app_module):
-    from flask import Flask
-
-    app = app_module.create_app()
-    assert app is not None
-    assert isinstance(app, Flask)
+def test_create_app(app_fixture):
+    """App factory returns a Flask instance."""
+    flask_app = app_fixture.create_app()
+    assert flask_app is not None
+    assert isinstance(flask_app, Flask)
 
 
 @pytest.mark.web
-# test_get_home_page_renders(app_module)
-def test_get_home_page_renders(app_module):
-    client = app_module.app.test_client()
+def test_get_home_page_renders(app_fixture):
+    """Analysis page renders key controls and labels."""
+    client = app_fixture.app.test_client()
     resp = client.get("/analysis")
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)

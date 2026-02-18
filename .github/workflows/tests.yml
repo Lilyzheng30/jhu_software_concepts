@@ -5,7 +5,28 @@ on:
   pull_request:
 
 jobs:
-  pytest:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      module4: ${{ steps.filter.outputs.module4 }}
+      module5: ${{ steps.filter.outputs.module5 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            module4:
+              - 'module_4/**'
+              - '.github/workflows/tests.yml'
+            module5:
+              - 'module_5/**'
+              - '.github/workflows/tests.yml'
+
+  module4-pytest:
+    needs: changes
+    if: ${{ needs.changes.outputs.module4 == 'true' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -36,7 +57,7 @@ jobs:
           pip install -r module_4/src/requirements.txt
           pip install pytest pytest-cov
 
-      - name: Run pytest
+      - name: Run module 4 pytest
         env:
           PGHOST: 127.0.0.1
           PGUSER: postgres
@@ -45,4 +66,48 @@ jobs:
           PGPORT: 5432
           DATABASE_URL: postgresql://postgres:abc123@127.0.0.1:5432/sm_app
         run: |
-          pytest -m "web or buttons or analysis or db or integration"
+          pytest -c module_4/pytest.ini module_4/tests -m "web or buttons or analysis or db or integration"
+
+  module5-pytest:
+    needs: changes
+    if: ${{ needs.changes.outputs.module5 == 'true' }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: abc123
+          POSTGRES_DB: sm_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r module_5/src/requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run module 5 pytest
+        env:
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: abc123
+          PGDATABASE: sm_app
+          PGPORT: 5432
+          DATABASE_URL: postgresql://postgres:abc123@127.0.0.1:5432/sm_app
+        run: |
+          pytest -c module_5/pytest.ini module_5/tests -m "web or buttons or analysis or db or integration"

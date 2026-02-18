@@ -1,127 +1,98 @@
-# End-to-end tests for pull -> update -> render flows.
+"""End-to-end tests for pull, update-analysis, and rendered output flows."""
+
+import importlib
+import json
 import os
 import sys
-import json
+
 import pytest
 
 SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
+build_applicant_rows = importlib.import_module("data_builders").build_applicant_rows
 
 
-@pytest.fixture
-def app_module(monkeypatch):
-    import app as app_module
-
-    monkeypatch.setenv(
-        "DATABASE_URL",
-        "postgresql://postgres:abc123@127.0.0.1:5432/sm_app",
-    )
+@pytest.fixture(name="app_fixture")
+def fixture_app(monkeypatch):
+    """Return app module with DATABASE_URL set for integration runs."""
+    app_module = importlib.import_module("app")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://postgres:abc123@127.0.0.1:5432/sm_app")
     return app_module
 
 
-@pytest.fixture
-def fake_rows(tmp_path):
-    rows = [
-        {
-            "program": "Computer Science",
-            "university": "Johns Hopkins University",
-            "comments": "Test",
-            "date_added": "2025-01-01",
-            "url": "https://example.com/a",
-            "applicant_status": "Accepted on Jan 01, 2025",
-            "semester_year_start": "Fall 2026",
-            "citizenship": "International",
-            "gpa": "3.9",
-            "gre_total": "330",
-            "gre_verbal": "165",
-            "gre_writing": "4.5",
-            "degree_type": "Masters",
-            "llm-generated-program": "Computer Science",
-            "llm-generated-university": "Johns Hopkins University",
-        },
-        {
-            "program": "Computer Science",
-            "university": "Stanford University",
-            "comments": "Test2",
-            "date_added": "2025-01-02",
-            "url": "https://example.com/b",
-            "applicant_status": "Accepted on Jan 02, 2025",
-            "semester_year_start": "Fall 2026",
-            "citizenship": "American",
-            "gpa": "3.8",
-            "gre_total": "329",
-            "gre_verbal": "164",
-            "gre_writing": "4.0",
-            "degree_type": "PhD",
-            "llm-generated-program": "Computer Science",
-            "llm-generated-university": "Stanford University",
-        },
-    ]
-    p = tmp_path / "rows.json"
-    p.write_text(json.dumps(rows))
-    return str(p)
+@pytest.fixture(name="fake_rows_file")
+def fixture_fake_rows_file(tmp_path):
+    """Create a rows.json file used by mocked LLM output stage."""
+    rows = build_applicant_rows()
+    path_obj = tmp_path / "rows.json"
+    path_obj.write_text(json.dumps(rows))
+    return str(path_obj)
 
 
 @pytest.mark.integration
-# test_end_to_end_flow(app_module, fake_rows, monkeypatch)
-def test_end_to_end_flow(app_module, fake_rows, monkeypatch):
-    # Patch pipeline steps to avoid network/LLM.
-    monkeypatch.setattr(app_module, "run_scrape", lambda **_: [])
-    monkeypatch.setattr(app_module, "run_clean", lambda **_: [])
+def test_end_to_end_flow(app_fixture, fake_rows_file, monkeypatch):
+    """Happy path: pull, update, then render analysis page."""
 
-    def fake_run_llm_and_write():
-        # Copy fake_rows into out.json
-        with open(fake_rows, "r", encoding="utf-8") as f:
-            rows = json.load(f)
-        with open(os.path.join(SRC_PATH, "out.json"), "w", encoding="utf-8") as f:
-            json.dump(rows, f)
+    def _fake_run_scrape(**_kwargs):
+        return []
 
-    monkeypatch.setattr(app_module, "run_llm_and_write_out_json", fake_run_llm_and_write)
+    def _fake_run_clean(**_kwargs):
+        return []
 
-    # Ensure module_2_out.json exists and is empty
+    def _fake_run_llm_and_write():
+        with open(fake_rows_file, "r", encoding="utf-8") as file_in:
+            rows = json.load(file_in)
+        with open(os.path.join(SRC_PATH, "out.json"), "w", encoding="utf-8") as file_out:
+            json.dump(rows, file_out)
+
+    monkeypatch.setattr(app_fixture, "run_scrape", _fake_run_scrape)
+    monkeypatch.setattr(app_fixture, "run_clean", _fake_run_clean)
+    monkeypatch.setattr(app_fixture, "run_llm_and_write_out_json", _fake_run_llm_and_write)
+
     module2_out = os.path.join(SRC_PATH, "module_2_out.json")
-    with open(module2_out, "w", encoding="utf-8") as f:
-        json.dump([], f)
+    with open(module2_out, "w", encoding="utf-8") as file_out:
+        json.dump([], file_out)
 
-    client = app_module.app.test_client()
+    client = app_fixture.app.test_client()
 
-    # Pull data -> load DB
     resp = client.post("/api/pull-data")
     assert resp.status_code == 200
 
-    # Update analysis
     resp2 = client.post("/api/update-analysis")
     assert resp2.status_code == 200
 
-    # Render page should show analysis labels
     resp3 = client.get("/analysis")
     assert resp3.status_code == 200
-    text = resp3.get_data(as_text=True)
-    assert "Answer:" in text
+    assert "Answer:" in resp3.get_data(as_text=True)
 
 
 @pytest.mark.integration
-# test_multiple_pulls_are_idempotent(app_module, fake_rows, monkeypatch)
-def test_multiple_pulls_are_idempotent(app_module, fake_rows, monkeypatch):
-    monkeypatch.setattr(app_module, "run_scrape", lambda **_: [])
-    monkeypatch.setattr(app_module, "run_clean", lambda **_: [])
+def test_multiple_pulls_are_idempotent(app_fixture, fake_rows_file, monkeypatch):
+    """Multiple pull-data calls should remain successful and idempotent."""
 
-    def fake_run_llm_and_write():
-        with open(fake_rows, "r", encoding="utf-8") as f:
-            rows = json.load(f)
-        with open(os.path.join(SRC_PATH, "out.json"), "w", encoding="utf-8") as f:
-            json.dump(rows, f)
+    def _fake_run_scrape(**_kwargs):
+        return []
 
-    monkeypatch.setattr(app_module, "run_llm_and_write_out_json", fake_run_llm_and_write)
+    def _fake_run_clean(**_kwargs):
+        return []
+
+    def _fake_run_llm_and_write():
+        with open(fake_rows_file, "r", encoding="utf-8") as file_in:
+            rows = json.load(file_in)
+        with open(os.path.join(SRC_PATH, "out.json"), "w", encoding="utf-8") as file_out:
+            json.dump(rows, file_out)
+
+    monkeypatch.setattr(app_fixture, "run_scrape", _fake_run_scrape)
+    monkeypatch.setattr(app_fixture, "run_clean", _fake_run_clean)
+    monkeypatch.setattr(app_fixture, "run_llm_and_write_out_json", _fake_run_llm_and_write)
 
     module2_out = os.path.join(SRC_PATH, "module_2_out.json")
-    with open(module2_out, "w", encoding="utf-8") as f:
-        json.dump([], f)
+    with open(module2_out, "w", encoding="utf-8") as file_out:
+        json.dump([], file_out)
 
-    client = app_module.app.test_client()
-
+    client = app_fixture.app.test_client()
     resp1 = client.post("/api/pull-data")
-    assert resp1.status_code == 200
     resp2 = client.post("/api/pull-data")
+    assert resp1.status_code == 200
     assert resp2.status_code == 200
