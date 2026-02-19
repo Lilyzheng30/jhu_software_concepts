@@ -1,0 +1,9 @@
+# App/runtime dependencies
+-r src/requirements.txt
+
+# Test dependencies
+pytest>=8,<10
+pytest-cov>=5,<7
+
+# Linting
+pylint>=3,<5

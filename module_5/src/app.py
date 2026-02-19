@@ -5,8 +5,10 @@ import os
 from contextlib import suppress
 
 import psycopg
+from psycopg import sql
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
+from db_config import read_database_url, read_db_params
 from load_data import run_load
 from query_data import QUERIES
 from module_2.clean import run_clean
@@ -15,6 +17,34 @@ from module_2.scrape import run_scrape
 
 
 APP_STATE = {"is_pulling": False}
+MIN_QUERY_LIMIT = 1
+MAX_QUERY_LIMIT = 100
+DEFAULT_QUERY_LIMIT = 25
+ALLOWED_FILTER_COLUMNS = {
+    "program": "program",
+    "university": "university",
+    "status": "status",
+    "term": "term",
+    "us_or_international": "us_or_international",
+    "degree": "degree",
+}
+ALLOWED_SORT_COLUMNS = {
+    "date_added": "date_added",
+    "gpa": "gpa",
+    "university": "university",
+    "program": "program",
+    "term": "term",
+}
+SELECTED_APPLICANT_COLUMNS = (
+    "program",
+    "university",
+    "url",
+    "status",
+    "term",
+    "us_or_international",
+    "degree",
+    "gpa",
+)
 # Backward-compatible alias used by existing tests.
 globals()["is_pulling"] = False
 
@@ -40,11 +70,19 @@ def _set_is_pulling(value):
 
 
 def get_db_connection():
-    """Create a database connection from the DATABASE_URL environment variable."""
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        raise RuntimeError("DATABASE_URL is not set")
-    return psycopg.connect(db_url)
+    """Create DB connection from DB_* env vars, with DATABASE_URL fallback."""
+    db_params = read_db_params("DB")
+    if db_params:
+        return psycopg.connect(**db_params)
+
+    db_url = read_database_url()
+    if db_url:
+        return psycopg.connect(db_url)
+
+    raise RuntimeError(
+        "Database settings missing: set DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD "
+        "or DATABASE_URL"
+    )
 
 
 def fetch_one_value(cursor, query):
@@ -63,6 +101,76 @@ def fetch_existing_urls():
     cur.close()
     conn.close()
     return urls
+
+
+def clamp_limit(raw_limit, min_limit=MIN_QUERY_LIMIT, max_limit=MAX_QUERY_LIMIT):
+    """Clamp user-provided limits to a safe bounded integer range."""
+    try:
+        parsed = int(raw_limit)
+    except (TypeError, ValueError):
+        parsed = DEFAULT_QUERY_LIMIT
+    return max(min_limit, min(max_limit, parsed))
+
+
+def build_safe_applicants_query(filters, sort_by, sort_direction, raw_limit):
+    """Build a SQL-composed applicants query and its parameter list."""
+    statement = sql.SQL("SELECT {cols} FROM {table}").format(
+        cols=sql.SQL(", ").join([sql.Identifier(col) for col in SELECTED_APPLICANT_COLUMNS]),
+        table=sql.Identifier("applicants"),
+    )
+
+    where_parts = []
+    params = []
+    for arg_name, column_name in ALLOWED_FILTER_COLUMNS.items():
+        value = (filters.get(arg_name) or "").strip()
+        if not value:
+            continue
+        where_parts.append(
+            sql.SQL("{} ILIKE %s").format(sql.Identifier(column_name))
+        )
+        params.append(f"%{value}%")
+
+    if where_parts:
+        statement = sql.SQL("{} WHERE {}").format(
+            statement,
+            sql.SQL(" AND ").join(where_parts),
+        )
+
+    safe_sort_column = ALLOWED_SORT_COLUMNS.get(sort_by, "date_added")
+    safe_direction = (
+        sql.SQL("DESC")
+        if str(sort_direction).strip().lower() == "desc"
+        else sql.SQL("ASC")
+    )
+    statement = sql.SQL("{} ORDER BY {} {}").format(
+        statement,
+        sql.Identifier(safe_sort_column),
+        safe_direction,
+    )
+
+    limited_value = clamp_limit(raw_limit)
+    statement = sql.SQL("{} LIMIT %s").format(statement)
+    params.append(limited_value)
+    return statement, params, limited_value
+
+
+def _rows_to_json(cursor_rows):
+    """Map DB rows from applicants select into JSON-safe dictionaries."""
+    out = []
+    for row in cursor_rows:
+        out.append(
+            {
+                "program": row[0],
+                "university": row[1],
+                "url": row[2],
+                "status": row[3],
+                "term": row[4],
+                "us_or_international": row[5],
+                "degree": row[6],
+                "gpa": row[7],
+            }
+        )
+    return out
 
 
 def ensure_initial_dataset_loaded():
@@ -302,6 +410,40 @@ def api_update_analysis():
     if _get_is_pulling():
         return jsonify({"ok": False, "busy": True}), 409
     return jsonify({"ok": True}), 200
+
+
+@app.route("/api/applicants", methods=["GET"])
+def api_list_applicants():
+    """List applicant rows using SQL-composed filtering, sorting, and safe limits."""
+    filters = {
+        "program": request.args.get("program", ""),
+        "university": request.args.get("university", ""),
+        "status": request.args.get("status", ""),
+        "term": request.args.get("term", ""),
+        "us_or_international": request.args.get("us_or_international", ""),
+        "degree": request.args.get("degree", ""),
+    }
+    sort_by = request.args.get("sort_by", "date_added")
+    sort_direction = request.args.get("sort_dir", "desc")
+    raw_limit = request.args.get("limit", str(DEFAULT_QUERY_LIMIT))
+
+    statement, params, safe_limit = build_safe_applicants_query(
+        filters=filters,
+        sort_by=sort_by,
+        sort_direction=sort_direction,
+        raw_limit=raw_limit,
+    )
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(statement, params)
+        rows = _rows_to_json(cur.fetchall())
+    finally:
+        cur.close()
+        conn.close()
+
+    return jsonify({"ok": True, "limit": safe_limit, "rows": rows}), 200
 
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ Update Analysis button
 
 Notes:
 - When running the codes, I created venv, pip install -r requirements.txt, Load DB (python3 load_data.py), Start web app (python3 app.py), open http://0.0.0.0:8080
-- In terms of setting up PostgreSQL, I installed PostgreSQL onto my laptop and used these commands: brew services start postgresql@16, createuser -s postgres, psql -d postgres -c "ALTER USER postgres WITH PASSWORD 'abc123';"
+- In terms of setting up PostgreSQL, I installed PostgreSQL onto my laptop and used these commands: brew services start postgresql@16, createuser -s postgres, psql -d postgres -c "ALTER USER postgres WITH PASSWORD '<set_password_here>';"
 - For testing my code, I made sure each time the database was reset, which I used these commands to drop the database and verify if it was dropped: psql -U postgres -d postgres -c "DROP DATABASE sm_app;", psql -U postgres -d sm_app -c "SELECT COUNT(*) AS total_rows FROM applicants;"
 - For work flow, I did python3 load_data.py and python3 app.py and that was all I needed to have the website running
 - For the website , Pull Data button is the long step that fetches/processes new data from the gradcafe website and inserts them into the database; after Pull Data finishes, clicking Update Analysis reruns the queries and reloads the page with updated results. Update Analysis is only available when Pull Data is not currently running.
@@ -45,5 +45,4 @@ Notes:
 Notes on LLM Model Files
 - Large .gguf model files are not committed to GitHub due to file size limits. it is in .gitignore
 - The model is downloaded on first run (or set with MODEL_FILE env var).
-
 

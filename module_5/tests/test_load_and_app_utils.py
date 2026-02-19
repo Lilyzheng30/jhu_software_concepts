@@ -14,6 +14,7 @@ if SRC_PATH not in sys.path:
 
 load_data = importlib.import_module("load_data")
 app_mod = importlib.import_module("app")
+db_config = importlib.import_module("db_config")
 
 
 def _app_attr(name):
@@ -112,6 +113,31 @@ def test_get_db_connection_uses_database_url(monkeypatch):
     conn = _app_attr("get_db_connection")()
     assert conn == "conn"
     assert called["url"] == "postgresql://u:p@h:5432/db"
+
+
+@pytest.mark.db
+def test_get_db_connection_uses_db_env_params(monkeypatch):
+    """get_db_connection uses DB_* vars before DATABASE_URL fallback."""
+    called = {"kwargs": None}
+
+    def _fake_connect(**kwargs):
+        called["kwargs"] = kwargs
+        return "conn-db-params"
+
+    monkeypatch.setenv("DB_HOST", "127.0.0.1")
+    monkeypatch.setenv("DB_PORT", "5432")
+    monkeypatch.setenv("DB_NAME", "sm_app")
+    monkeypatch.setenv("DB_USER", "sm_app_user")
+    monkeypatch.setenv("DB_PASSWORD", "secret")
+    monkeypatch.setattr(app_mod.psycopg, "connect", _fake_connect)
+
+    conn = _app_attr("get_db_connection")()
+    assert conn == "conn-db-params"
+    assert called["kwargs"]["host"] == "127.0.0.1"
+    assert called["kwargs"]["port"] == "5432"
+    assert called["kwargs"]["dbname"] == "sm_app"
+    assert called["kwargs"]["user"] == "sm_app_user"
+    assert called["kwargs"]["password"] == "secret"
 
 
 @pytest.mark.db
@@ -362,6 +388,101 @@ def test_create_connection_failure(monkeypatch):
 
 
 @pytest.mark.db
+def test_db_config_read_db_params(monkeypatch):
+    """read_db_params returns dict with optional password handling."""
+    monkeypatch.setenv("DB_HOST", "h")
+    monkeypatch.setenv("DB_PORT", "5432")
+    monkeypatch.setenv("DB_NAME", "db")
+    monkeypatch.setenv("DB_USER", "u")
+    monkeypatch.setenv("DB_PASSWORD", "pw")
+    params = db_config.read_db_params("DB")
+    assert params["password"] == "pw"
+
+    monkeypatch.setenv("DB_PASSWORD", "")
+    params_no_pw = db_config.read_db_params("DB")
+    assert "password" not in params_no_pw
+
+
+@pytest.mark.db
+def test_create_connection_from_env_prefers_db_params(monkeypatch):
+    """create_connection_from_env uses DB_* values when present."""
+    monkeypatch.setenv("DB_HOST", "h")
+    monkeypatch.setenv("DB_PORT", "5432")
+    monkeypatch.setenv("DB_NAME", "db")
+    monkeypatch.setenv("DB_USER", "u")
+    monkeypatch.setenv("DB_PASSWORD", "pw")
+
+    called = {"args": None}
+
+    def _fake_create_connection(db_name, db_user, db_password, db_host, db_port):
+        called["args"] = (db_name, db_user, db_password, db_host, db_port)
+        return "conn"
+
+    monkeypatch.setattr(load_data, "create_connection", _fake_create_connection)
+    assert load_data.create_connection_from_env() == "conn"
+    assert called["args"] == ("db", "u", "pw", "h", "5432")
+
+
+@pytest.mark.db
+def test_create_connection_from_env_database_url_error(monkeypatch):
+    """DATABASE_URL connect error returns None."""
+    monkeypatch.delenv("DB_HOST", raising=False)
+    monkeypatch.delenv("DB_PORT", raising=False)
+    monkeypatch.delenv("DB_NAME", raising=False)
+    monkeypatch.delenv("DB_USER", raising=False)
+    monkeypatch.delenv("DB_PASSWORD", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h:5432/db")
+
+    def _fake_connect(**_kwargs):
+        raise load_data.OperationalError("boom")
+
+    monkeypatch.setattr(load_data.psycopg, "connect", _fake_connect)
+    assert load_data.create_connection_from_env() is None
+
+
+@pytest.mark.db
+def test_create_connection_from_env_default_connect_and_error(monkeypatch):
+    """Fallback psycopg.connect() path supports success and error branches."""
+    monkeypatch.delenv("DB_HOST", raising=False)
+    monkeypatch.delenv("DB_PORT", raising=False)
+    monkeypatch.delenv("DB_NAME", raising=False)
+    monkeypatch.delenv("DB_USER", raising=False)
+    monkeypatch.delenv("DB_PASSWORD", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    def _fake_connect_ok(**_kwargs):
+        return "ok"
+
+    monkeypatch.setattr(load_data.psycopg, "connect", _fake_connect_ok)
+    assert load_data.create_connection_from_env() == "ok"
+
+    def _fake_connect_bad(**_kwargs):
+        raise load_data.OperationalError("boom")
+
+    monkeypatch.setattr(load_data.psycopg, "connect", _fake_connect_bad)
+    assert load_data.create_connection_from_env() is None
+
+
+@pytest.mark.db
+def test_create_admin_connection_from_env(monkeypatch):
+    """Admin env vars are routed through create_connection correctly."""
+    monkeypatch.setenv("DB_ADMIN_HOST", "h")
+    monkeypatch.setenv("DB_ADMIN_PORT", "5432")
+    monkeypatch.setenv("DB_ADMIN_NAME", "postgres")
+    monkeypatch.setenv("DB_ADMIN_USER", "postgres")
+    monkeypatch.setenv("DB_ADMIN_PASSWORD", "pw")
+    called = {"args": None}
+
+    def _fake_create_connection(db_name, db_user, db_password, db_host, db_port):
+        called["args"] = (db_name, db_user, db_password, db_host, db_port)
+        return "admin-conn"
+
+    monkeypatch.setattr(load_data, "create_connection", _fake_create_connection)
+    assert load_data.create_admin_connection_from_env() == "admin-conn"
+    assert called["args"] == ("postgres", "postgres", "pw", "h", "5432")
+
+
+@pytest.mark.db
 def test_create_database_success():
     """create_database executes SQL against provided connection."""
 
@@ -392,6 +513,90 @@ def test_create_database_success():
 
     conn = _FakeConn()
     load_data.create_database(conn, "CREATE DATABASE testdb")
+
+
+@pytest.mark.db
+def test_create_database_error_branch():
+    """create_database handles psycopg.Error path."""
+
+    class _FakeCursor:
+        """Cursor that raises psycopg.Error."""
+
+        def execute(self, _query):
+            raise load_data.psycopg.Error("boom")
+
+    class _FakeConn:
+        """Connection returning failing cursor."""
+
+        def __init__(self):
+            self.autocommit = False
+
+        def cursor(self):
+            return _FakeCursor()
+
+    conn = _FakeConn()
+    load_data.create_database(conn, "CREATE DATABASE testdb")
+
+
+@pytest.mark.db
+def test_run_load_admin_branch_and_connection_none(monkeypatch, tmp_path):
+    """run_load covers admin-create path and None-connection RuntimeError."""
+    input_path = tmp_path / "rows.json"
+    input_path.write_text("[]")
+
+    class _AdminConn:
+        """Admin connection tracking close calls."""
+
+        def __init__(self):
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    class _FakeCursor:
+        """Application cursor no-op."""
+
+        def execute(self, *_args):
+            return None
+
+        def close(self):
+            return None
+
+    class _AppConn:
+        """Application DB connection no-op."""
+
+        def __init__(self):
+            self.autocommit = False
+
+        def cursor(self):
+            return _FakeCursor()
+
+        def commit(self):
+            return None
+
+        def close(self):
+            return None
+
+    admin_conn = _AdminConn()
+    called = {"create_db": False}
+
+    def _fake_create_database(_conn, _query):
+        called["create_db"] = True
+
+    monkeypatch.setenv("DB_NAME", "sm_app")
+    monkeypatch.setattr(load_data, "create_admin_connection_from_env", lambda: admin_conn)
+    monkeypatch.setattr(load_data, "create_database", _fake_create_database)
+    monkeypatch.setattr(load_data, "create_connection_from_env", lambda: _AppConn())
+    monkeypatch.setattr(load_data, "execute_query", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(load_data.json, "load", lambda _f: [])
+    load_data.run_load(input_file=str(input_path))
+    assert called["create_db"] is True
+    assert admin_conn.closed is True
+
+    monkeypatch.setattr(load_data, "create_admin_connection_from_env", lambda: None)
+    monkeypatch.setattr(load_data, "create_connection_from_env", lambda: None)
+    with pytest.raises(RuntimeError):
+        load_data.run_load(input_file=str(input_path))
 
 
 @pytest.mark.db

@@ -34,13 +34,21 @@ File Overview (Module 4)
 
 How to Run Tests
 - From repo root:
-  export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
+  export DB_HOST="127.0.0.1"
+  export DB_PORT="5432"
+  export DB_NAME="sm_app"
+  export DB_USER="sm_app_user"
+  export DB_PASSWORD="replace_me"
   pytest -c module_5/pytest.ini module_5/tests -m "web or buttons or analysis or db or integration" --cov=module_5/src
 
 
 How to Run the App
-- From module_4/src:
-  export DATABASE_URL="postgresql://postgres:abc123@127.0.0.1:5432/sm_app"
+- From module_5/src:
+  export DB_HOST="127.0.0.1"
+  export DB_PORT="5432"
+  export DB_NAME="sm_app"
+  export DB_USER="sm_app_user"
+  export DB_PASSWORD="replace_me"
   python app.py
 
 Sphinx Docs
@@ -53,15 +61,36 @@ Pylint (Module 5)
 - Install Pylint:
    python3 -m pip install pylint
 - Run Pylint on all Python files in module_5:
-  PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc $(find module_5 -type f -name "*.py")
+  PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc \
+  $(find module_5 -type f -name "*.py" \
+    -not -path "*/venv/*" \
+    -not -path "*/__pycache__/*" \
+    -not -path "*/docs/build/*")
+
+Database Hardening (Least Privilege)
+- App code reads DB settings from environment variables:
+  `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- Optional compatibility fallback:
+  `DATABASE_URL`
+- Optional admin-only bootstrap vars (for one-time DB creation in loader):
+  `DB_ADMIN_HOST`, `DB_ADMIN_PORT`, `DB_ADMIN_NAME`, `DB_ADMIN_USER`, `DB_ADMIN_PASSWORD`
+
+Suggested least-privilege SQL setup
+```sql
+CREATE ROLE sm_app_user LOGIN PASSWORD 'replace_me' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+GRANT CONNECT ON DATABASE sm_app TO sm_app_user;
+GRANT USAGE ON SCHEMA public TO sm_app_user;
+GRANT SELECT, INSERT ON TABLE applicants TO sm_app_user;
+```
+
+Why these permissions
+- `SELECT` is needed for analysis/read endpoints.
+- `INSERT` is needed for `run_load()` when loading new rows.
+- No `DROP`, `ALTER`, ownership, or superuser privileges are granted.
 
 - Latest result:
-  
-
-
   PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc \
-$(find module_5 -type f -name "*.py" \
-  -not -path "module_5/venv/*" \
-  -not -path "module_5/docs/build/*" \
-  -not -path "*/__pycache__/*")
-
+  $(find module_5 -type f -name "*.py" \
+    -not -path "*/venv/*" \
+    -not -path "*/__pycache__/*" \
+    -not -path "*/docs/build/*")

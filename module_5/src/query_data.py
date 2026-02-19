@@ -9,14 +9,16 @@ QUERIES = {
     "q1": """
         SELECT COUNT(*)
         FROM applicants
-        WHERE term = 'Fall 2026';
+        WHERE term = 'Fall 2026'
+        LIMIT 1;
     """,
     "q2": """
         SELECT ROUND(
             100.0 * SUM(CASE WHEN us_or_international NOT IN ('American', 'Other') THEN 1 ELSE 0 END) / COUNT(*),
             2
         )
-        FROM applicants;
+        FROM applicants
+        LIMIT 1;
     """,
     "q3": """
         SELECT
@@ -24,12 +26,14 @@ QUERIES = {
             ROUND(AVG(gre)::numeric, 2),
             ROUND(AVG(gre_v)::numeric, 2),
             ROUND(AVG(gre_aw)::numeric, 2)
-        FROM applicants;
+        FROM applicants
+        LIMIT 1;
     """,
     "q4": """
         SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE us_or_international = 'American' AND term = 'Fall 2026';
+        WHERE us_or_international = 'American' AND term = 'Fall 2026'
+        LIMIT 1;
     """,
     "q5": """
         SELECT ROUND(
@@ -37,17 +41,20 @@ QUERIES = {
             2
         )
         FROM applicants
-        WHERE term = 'Fall 2026';
+        WHERE term = 'Fall 2026'
+        LIMIT 1;
     """,
     "q6": """
         SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE term = 'Fall 2026' AND status ILIKE 'Accepted on%';
+        WHERE term = 'Fall 2026' AND status ILIKE 'Accepted on%'
+        LIMIT 1;
     """,
     "q7": """
         SELECT COUNT(*)
         FROM applicants
-        WHERE degree = 'Masters' AND program = 'Computer Science' AND university = 'Johns Hopkins University';
+        WHERE degree = 'Masters' AND program = 'Computer Science' AND university = 'Johns Hopkins University'
+        LIMIT 1;
     """,
     "q8": """
         SELECT COUNT(*)
@@ -61,7 +68,8 @@ QUERIES = {
             )
         AND degree = 'PhD'
         AND program ILIKE '%Computer Science%'
-        AND status ILIKE 'Accepted on%';
+        AND status ILIKE 'Accepted on%'
+        LIMIT 1;
     """,
     "q9": """
         SELECT COUNT(*)
@@ -75,21 +83,24 @@ QUERIES = {
             )
           AND degree = 'PhD'
           AND llm_generated_program ILIKE '%Computer Science%'
-          AND status ILIKE 'Accepted on%';
+          AND status ILIKE 'Accepted on%'
+          LIMIT 1;
     """,
     "q10": """
         SELECT COUNT(*)
         FROM applicants
         WHERE university = 'Johns Hopkins University'
           AND status ILIKE 'Accepted on%'
-          AND us_or_international NOT IN ('American', 'Other');
+          AND us_or_international NOT IN ('American', 'Other')
+          LIMIT 1;
     """,
     "q11": """
         SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
         WHERE university = 'Harvard University'
           AND program = 'Computer Science'
-          AND status ILIKE 'Accepted on%';
+          AND status ILIKE 'Accepted on%'
+          LIMIT 1;
     """,
 }
 
@@ -114,7 +125,7 @@ def execute_read_query(db_conn, query):
 
 
 if __name__ == "__main__":
-    connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
+    connection = _load_data.create_connection_from_env()
 
     # for the console question output
     def first_value(sql_query, db_conn=None):

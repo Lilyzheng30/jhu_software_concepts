@@ -1,11 +1,14 @@
 """Load cleaned JSON records into PostgreSQL."""
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
 import psycopg
 from psycopg import OperationalError
+from psycopg import sql
+from db_config import read_database_url, read_db_params
 
 
 def create_connection(db_name, db_user, db_password, db_host, db_port):
@@ -23,6 +26,47 @@ def create_connection(db_name, db_user, db_password, db_host, db_port):
     except OperationalError as e:
         print(f"The error '{e}' occurred")
         return None
+
+
+def create_connection_from_env():
+    """Create app DB connection from DB_* vars, with DATABASE_URL fallback."""
+    db_params = read_db_params("DB")
+    if db_params:
+        return create_connection(
+            db_params["dbname"],
+            db_params["user"],
+            db_params.get("password"),
+            db_params["host"],
+            db_params["port"],
+        )
+
+    db_url = read_database_url()
+    if db_url:
+        try:
+            return psycopg.connect(conninfo=db_url)
+        except OperationalError as e:
+            print(f"The error '{e}' occurred")
+            return None
+    try:
+        return psycopg.connect()
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+        return None
+
+
+def create_admin_connection_from_env():
+    """Create admin DB connection for optional DB creation/bootstrap."""
+    admin_params = read_db_params("DB_ADMIN")
+    if admin_params:
+        return create_connection(
+            admin_params["dbname"],
+            admin_params["user"],
+            admin_params.get("password"),
+            admin_params["host"],
+            admin_params["port"],
+        )
+    return None
+
 
 def create_database(connection, query):
     """Execute a database-level SQL command."""
@@ -109,11 +153,26 @@ ON CONFLICT (url) DO NOTHING;
 
 def run_load(input_file="module_2_out.json"):
     """Load JSON rows into PostgreSQL, creating DB/table/index as needed."""
-    connection = create_connection("postgres", "postgres", "abc123", "127.0.0.1", "5432")
-    create_database(connection, "CREATE DATABASE sm_app")
-    connection.close()
+    app_db_name = os.getenv("DB_NAME")
+    if not app_db_name:
+        db_url = os.getenv("DATABASE_URL", "")
+        if "/" in db_url:
+            app_db_name = db_url.rsplit("/", maxsplit=1)[-1].split("?", maxsplit=1)[0]
 
-    connection = create_connection("sm_app", "postgres", "abc123", "127.0.0.1", "5432")
+    admin_connection = create_admin_connection_from_env()
+    if admin_connection is not None and app_db_name:
+        create_database(
+            admin_connection,
+            sql.SQL("CREATE DATABASE {}").format(sql.Identifier(app_db_name)),
+        )
+        admin_connection.close()
+
+    connection = create_connection_from_env()
+    if connection is None:
+        raise RuntimeError(
+            "Failed DB connection. Set DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD "
+            "or DATABASE_URL."
+        )
     execute_query(connection, CREATE_APPLICANT_TABLE)
     # Remove existing duplicate URLs before creating unique index
     execute_query(connection, DEDUPE_EXISTING_URLS)
