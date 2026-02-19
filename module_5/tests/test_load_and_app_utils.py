@@ -107,6 +107,11 @@ def test_get_db_connection_uses_database_url(monkeypatch):
         called["url"] = arg
         return "conn"
 
+    monkeypatch.delenv("DB_HOST", raising=False)
+    monkeypatch.delenv("DB_PORT", raising=False)
+    monkeypatch.delenv("DB_NAME", raising=False)
+    monkeypatch.delenv("DB_USER", raising=False)
+    monkeypatch.delenv("DB_PASSWORD", raising=False)
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h:5432/db")
     monkeypatch.setattr(app_mod.psycopg, "connect", _fake_connect)
 
@@ -143,6 +148,11 @@ def test_get_db_connection_uses_db_env_params(monkeypatch):
 @pytest.mark.db
 def test_get_db_connection_missing_database_url(monkeypatch):
     """Missing DATABASE_URL raises RuntimeError."""
+    monkeypatch.delenv("DB_HOST", raising=False)
+    monkeypatch.delenv("DB_PORT", raising=False)
+    monkeypatch.delenv("DB_NAME", raising=False)
+    monkeypatch.delenv("DB_USER", raising=False)
+    monkeypatch.delenv("DB_PASSWORD", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(RuntimeError):
         _app_attr("get_db_connection")()

@@ -7,3 +7,6 @@ pytest-cov>=5,<7
 
 # Linting
 pylint>=3,<5
+
+# Dependency graph
+pydeps>=1.12,<2
