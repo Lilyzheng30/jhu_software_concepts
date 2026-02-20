@@ -1,12 +1,7 @@
-# App/runtime dependencies
 -r src/requirements.txt
-
-# Test dependencies
+setuptools>=68
 pytest>=8,<10
 pytest-cov>=5,<7
-
-# Linting
 pylint>=3,<5
-
-# Dependency graph
 pydeps>=1.12,<2
+werkzeug>=3.1.6,<4
