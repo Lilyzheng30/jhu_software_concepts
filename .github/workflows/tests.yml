@@ -98,8 +98,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r module_5/src/requirements.txt
-          pip install pytest pytest-cov
+          pip install -r module_5/requirements.txt
 
       - name: Run module 5 pytest
         env:
@@ -111,3 +110,87 @@ jobs:
           DATABASE_URL: postgresql://postgres:abc123@127.0.0.1:5432/sm_app
         run: |
           pytest -c module_5/pytest.ini module_5/tests -m "web or buttons or analysis or db or integration"
+
+  module5-pylint:
+    needs: changes
+    if: ${{ needs.changes.outputs.module5 == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r module_5/requirements.txt
+
+      - name: Run pylint (fail-under 10)
+        run: |
+          PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc --fail-under=10 \
+          $(find module_5/src -type f -name "*.py" -not -path "*/__pycache__/*")
+
+  module5-dependency-graph:
+    needs: changes
+    if: ${{ needs.changes.outputs.module5 == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies and graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+          python -m pip install --upgrade pip
+          pip install -r module_5/requirements.txt
+
+      - name: Generate dependency graph
+        run: |
+          cd module_5/src
+          pydeps app.py --noshow -T svg -o ../dependency.svg
+
+      - name: Verify dependency.svg exists
+        run: |
+          test -s module_5/dependency.svg
+
+      - name: Upload dependency graph artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-dependency-graph
+          path: module_5/dependency.svg
+
+  module5-snyk:
+    needs: changes
+    if: ${{ needs.changes.outputs.module5 == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r module_5/requirements.txt
+
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
+
+      - name: Run snyk test (non-blocking output step)
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          cd module_5
+          snyk test
