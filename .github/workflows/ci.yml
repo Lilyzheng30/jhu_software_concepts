@@ -171,6 +171,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.module5 == 'true' }}
     runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -188,9 +190,7 @@ jobs:
         uses: snyk/actions/setup@master
 
       - name: Run snyk test (non-blocking output step)
-        if: ${{ secrets.SNYK_TOKEN != '' }}
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        if: ${{ env.SNYK_TOKEN != '' }}
         run: |
           cd module_5
           snyk test || true
