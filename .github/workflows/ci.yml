@@ -19,10 +19,10 @@ jobs:
           filters: |
             module4:
               - 'module_4/**'
-              - '.github/workflows/tests.yml'
+              - '.github/workflows/ci.yml'
             module5:
               - 'module_5/**'
-              - '.github/workflows/tests.yml'
+              - '.github/workflows/ci.yml'
 
   module4-pytest:
     needs: changes
@@ -188,9 +188,9 @@ jobs:
         uses: snyk/actions/setup@master
 
       - name: Run snyk test (non-blocking output step)
-        continue-on-error: true
+        if: ${{ secrets.SNYK_TOKEN != '' }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           cd module_5
-          snyk test
+          snyk test || true
