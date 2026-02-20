@@ -2,9 +2,9 @@ Lily Zheng
 JHED: lzheng45  
 Module 5 Assignment: Software Assurance + Secure SQL (SQLi Defense) Assignment 
 
-Grad Cafe Analytics (Module 4)
+Software Assurance + Secure SQL (Module 5)
 
-File Overview (Module 4)
+File Overview (Module 5)
 - tests/: pytest suite (all tests marked: web, buttons, analysis, db, integration)
     - test_flask_page.py: checks the flask app factory exist, required route exist, and get /analysis returns the page with analysis, pull data and update analysis
     - test_buttons.py: verifies that the api endpoints return 200 when not busy and 409 when busy 
@@ -67,8 +67,6 @@ Pylint (Module 5)
 - Run Pylint on Python files in `module_5/src`:
   PYLINTHOME=/tmp/pylint pylint --rcfile module_5/.pylintrc \
 $(find module_5/src -type f -name "*.py" -not -path "*/__pycache__/*")
-
-
 
 Python Dependency Graph (pydeps + Graphviz)
 - Install tools:

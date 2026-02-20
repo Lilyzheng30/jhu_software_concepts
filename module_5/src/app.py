@@ -49,6 +49,41 @@ SELECTED_APPLICANT_COLUMNS = (
 globals()["is_pulling"] = False
 
 
+def _src_dir():
+    """Return source directory for this module."""
+    return os.path.dirname(__file__)
+
+
+def _module2_dir():
+    """Return module_2 directory under src."""
+    return os.path.join(_src_dir(), "module_2")
+
+
+def _module2_out_path():
+    """Return module_2_out.json path under src."""
+    return os.path.join(_src_dir(), "module_2_out.json")
+
+
+def _out_json_path():
+    """Return out.json path under src."""
+    return os.path.join(_src_dir(), "out.json")
+
+
+def _applicant_json_path():
+    """Return applicant_data.json path under src/module_2."""
+    return os.path.join(_module2_dir(), "applicant_data.json")
+
+
+def _llm_input_json_path():
+    """Return llm_extend_applicant_data.json path under src/module_2."""
+    return os.path.join(_module2_dir(), "llm_extend_applicant_data.json")
+
+
+def _llm_jsonl_path():
+    """Return llm JSONL output path under src/module_2."""
+    return os.path.join(_module2_dir(), "llm_extend_applicant_data.json.jsonl")
+
+
 def create_app():
     """Create and return the Flask app instance."""
     flask_app = Flask(__name__)
@@ -194,7 +229,7 @@ def ensure_initial_dataset_loaded():
 
     if current_count == 0:
         with suppress(Exception):
-            run_load(input_file="module_2_out.json")
+            run_load(input_file=_module2_out_path())
             seeded = True
 
     return seeded
@@ -202,33 +237,28 @@ def ensure_initial_dataset_loaded():
 
 def run_llm_and_write_out_json():
     """Run the LLM JSONL step and convert output to out.json."""
-    input_path = "module_2/llm_extend_applicant_data.json"
-    jsonl_path = "module_2/llm_extend_applicant_data.json.jsonl"
-    out_json_path = "out.json"
-
     llm_app.cli_process_file(
-        in_path=input_path,
-        out_path=jsonl_path,
+        in_path=_llm_input_json_path(),
+        out_path=_llm_jsonl_path(),
         append=False,
         to_stdout=False,
     )
 
     rows = []
-    with open(jsonl_path, "r", encoding="utf-8") as file_in:
+    with open(_llm_jsonl_path(), "r", encoding="utf-8") as file_in:
         for line in file_in:
             line = line.strip()
             if line:
                 rows.append(json.loads(line))
 
-    with open(out_json_path, "w", encoding="utf-8") as file_out:
+    with open(_out_json_path(), "w", encoding="utf-8") as file_out:
         json.dump(rows, file_out, indent=2, ensure_ascii=False)
 
 
 def merge_out_into_module2_out():
     """Append only new URLs from out.json into module_2_out.json."""
-    base_dir = os.path.dirname(__file__)
-    master_path = os.path.join(base_dir, "module_2_out.json")
-    batch_path = os.path.join(base_dir, "out.json")
+    master_path = _module2_out_path()
+    batch_path = _out_json_path()
 
     if os.path.exists(master_path):
         with open(master_path, "r", encoding="utf-8") as file_in:
@@ -342,14 +372,14 @@ def run_pull_data_pipeline():
     try:
         seeded_now = ensure_initial_dataset_loaded()
         existing_urls = fetch_existing_urls()
-        run_scrape(existing_urls=existing_urls, filename="module_2/applicant_data.json")
+        run_scrape(existing_urls=existing_urls, filename=_applicant_json_path())
         run_clean(
-            input_file="module_2/applicant_data.json",
-            output_file="module_2/llm_extend_applicant_data.json",
+            input_file=_applicant_json_path(),
+            output_file=_llm_input_json_path(),
         )
         run_llm_and_write_out_json()
         added_rows, total_rows = merge_out_into_module2_out()
-        run_load(input_file="module_2_out.json")
+        run_load(input_file=_module2_out_path())
         status = (
             f"Pull Data completed. Added {added_rows} new rows. "
             f"module_2_out now has {total_rows} rows."
